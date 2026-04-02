@@ -12,34 +12,37 @@
 \usepackage{xcolor} 
 \usepackage[cache=true]{minted} 
 \usepackage[most]{tcolorbox}
-\tcbuselibrary{minted}
+\usepackage{tikz}
+\tcbuselibrary{minted, skins}
 
 \setminted{
-    fontsize=\small,       % 字号
-    style=default,         % 经典的黑底/暗色风格（也可以用 default, friendly）
-    linenos=false,         % 是否显示行号
-    breaklines=true,       % 自动折行
-    fontfamily=tt          % 使用等宽字体
+    fontsize=\small,
+    style=default,
+    linenos=false,
+    breaklines=true,
+    fontfamily=tt
 }
 
 \newtcolorbox{problembox}[2]{
     enhanced,
     sharp corners,
-    boxrule=1.5pt,           % 边框厚度
-    colframe=orange!90!black,% 橙色边框
-    colback=white,           % 背景纯白
-    colbacktitle=white,      % 标题背景也是白色
-    coltitle=black,          % 标题纯黑
-    fonttitle=\bfseries,     % 标题加粗
+    boxrule=1.5pt,
+    colframe=orange!90!black,
+    colback=white,
+    colbacktitle=white,
+    coltitle=black,
+    fonttitle=\bfseries,
     title={Problem (#1): #2},
-    % 核心：设置标题下方的黑线
-    titlerule=0.4pt,         
-    titlerule style={black},
-    % 间距微调
-    toptitle=6pt,            % 标题上方留白
-    bottomtitle=4pt,         % 标题到黑线的留白
-    top=10pt,                % 黑线到正文的距离
-    left=10pt, right=10pt, bottom=10pt
+    titlerule=0pt,
+    overlay={
+        \draw[black, line width=0.4pt] ([xshift=15pt, yshift=3pt]title.south west) -- ([xshift=-15pt, yshift=3pt]title.south east);
+    },
+    toptitle=6pt,
+    bottomtitle=6pt,
+    top=8pt,
+    left=10pt,
+    right=10pt,
+    bottom=10pt
 }
 
 \begin{document}
@@ -48,9 +51,6 @@
 
 \paragraph{What you will implement}
 
-% itemsep: 项与项之间的额外距离
-% parsep: 项内如果分段的距离
-% topsep: 列表顶部与上方文字的距离
 \begin{enumerate}[itemsep=0pt, parsep=0pt, topsep=0pt]
     \item Byte-pair encoding (BPE) tokenizer \hfill \tcbox[on line, boxsep=0pt, left=2pt, right=2pt, top=2pt, bottom=2pt, colback=green!10, colframe=green!50!black, fontupper=\tiny\bfseries]{DONE}
     \item Transformer language model (LM)
@@ -70,8 +70,6 @@
 
 \newpage
 
-
-% next section
 \section{Byte-Pair Encoding (BPE) Tokenizer}
 \subsection{The Unicode Standard}
 
@@ -80,7 +78,6 @@ The \mintinline{python}{chr()} function converts an integer Unicode code point i
 
 \begin{problembox}{unicode1}{Understanding Unicode (1 point)}
 
-    % 使用 enumitem 列表，设置标签格式和垂直间距
     \begin{enumerate}[label=(\alph*), itemsep=0.5em, topsep=0pt]
 
         \item What Unicode character does \texttt{chr(0)} return? \\
@@ -92,7 +89,7 @@ The \mintinline{python}{chr()} function converts an integer Unicode code point i
         \item What happens when this character occurs in text? It may be helpful to play around with the following in your Python interpreter and see if it matches your expectations:
 
               \textbf{Answer:} Code below.
-              % 使用 minted 环境，xleftmargin 确保代码与列表文字对齐
+
               \begin{minted}[xleftmargin=1.5em, framesep=5pt]{pycon}
 >>> chr(0)
 '\x00'
@@ -103,8 +100,6 @@ The \mintinline{python}{chr()} function converts an integer Unicode code point i
 >>> print("this is a test" + chr(0) + "string")
 this is a teststring
 \end{minted}
-
-
 
     \end{enumerate}
 
@@ -121,7 +116,6 @@ this is a teststring
 
 \begin{problembox}{unicode2}{Unicode Encodings (3 point)}
 
-    % 使用 enumitem 列表，设置标签格式和垂直间距
     \begin{enumerate}[label=(\alph*), itemsep=0.5em, topsep=0pt]
 
         \item What are some reasons to prefer training our tokenizer on UTF-8 encoded bytes, rather than UTF-16 or UTF-32? It may be helpful to compare the output of these encodings for various input strings.\\
@@ -135,10 +129,14 @@ this is a teststring
 def decode_utf8_bytes_to_str_wrong(bytestring: bytes): 
     return "".join([bytes([b]).decode("utf-8") for b in bytestring])
 \end{minted}
+
+              \vspace{-0.5em}
+
               \begin{minted}[xleftmargin=1.5em, framesep=5pt]{pycon}
 >>> decode_utf8_bytes_to_str_wrong("hello".encode("utf-8"))
 'hello'
 \end{minted}
+
         \item Give a two byte sequence that does not decode to any Unicode character(s).\\
               \textbf{Example:} \mintinline{python}{b'\xff\xff'}.\\
               \textbf{Answer:} This sequence is invalid because the byte \mintinline{python}{0xFF} is explicitly forbidden in the UTF-8 standard and does not correspond to any valid lead or continuation byte in the encoding scheme.

@@ -68,6 +68,8 @@
     \item Train models on OpenWebText and submit your attained perplexities to a leaderboard.
 \end{enumerate}
 
+\newpage
+
 \section{Byte-Pair Encoding (BPE) Tokenizer}
 \subsection{The Unicode Standard}
 
@@ -80,22 +82,27 @@ The \mintinline{python}{chr()} function converts an integer Unicode code point i
     \begin{enumerate}[label=(\alph*), itemsep=0.5em, topsep=0pt]
 
         \item What Unicode character does \texttt{chr(0)} return? \\
-              \textbf{Deliverable:} A one-sentence response.
+              \textbf{Answer:} \mintinline{python}{'\x00'}
 
-        \item How does this character's string representation (\texttt{\_\_repr\_\_()}) differ from its printed representation? \\
-              \textbf{Deliverable:} A one-sentence response.
+        \item How does this character's string representation \mintinline{python}{__repr__()} differ from its printed representation? \\
+              \textbf{Answer:} The \mintinline{python}{__repr__()} is designed to be \textbf{unambiguous} and is mainly for developers, showing the technical details of the object. On the other hand, the printed representation is meant to be \textbf{readable} and user-friendly.
 
         \item What happens when this character occurs in text? It may be helpful to play around with the following in your Python interpreter and see if it matches your expectations:
 
+              \textbf{Answer:} Code below.
               % 使用 minted 环境，xleftmargin 确保代码与列表文字对齐
-              \begin{minted}[xleftmargin=1.5em, framesep=5pt]{python}
+              \begin{minted}[xleftmargin=1.5em, framesep=5pt]{pycon}
 >>> chr(0)
+'\x00'
 >>> print(chr(0))
+
 >>> "this is a test" + chr(0) + "string"
+'this is a test\x00string'
 >>> print("this is a test" + chr(0) + "string")
+this is a teststring
 \end{minted}
 
-              \textbf{Deliverable:} A one-sentence response.
+
 
     \end{enumerate}
 

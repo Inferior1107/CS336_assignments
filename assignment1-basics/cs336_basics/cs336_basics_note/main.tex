@@ -1,0 +1,104 @@
+\documentclass{ctexart}
+
+\ctexset{
+  section = {
+    format = {\Large\bfseries\raggedright}, 
+    indent = {0pt}                         
+  }
+}
+
+\usepackage{enumitem}
+\usepackage[a4paper, margin=1in]{geometry}
+\usepackage{xcolor} 
+\usepackage[cache=true]{minted} 
+\usepackage[most]{tcolorbox}
+\tcbuselibrary{minted}
+
+\setminted{
+    fontsize=\small,       % 字号
+    style=default,         % 经典的黑底/暗色风格（也可以用 default, friendly）
+    linenos=false,         % 是否显示行号
+    breaklines=true,       % 自动折行
+    fontfamily=tt          % 使用等宽字体
+}
+
+\newtcolorbox{problembox}[2]{
+    enhanced,
+    sharp corners,
+    boxrule=1.5pt,           % 边框厚度
+    colframe=orange!90!black,% 橙色边框
+    colback=white,           % 背景纯白
+    colbacktitle=white,      % 标题背景也是白色
+    coltitle=black,          % 标题纯黑
+    fonttitle=\bfseries,     % 标题加粗
+    title={Problem (#1): #2},
+    % 核心：设置标题下方的黑线
+    titlerule=0.4pt,         
+    titlerule style={black},
+    % 间距微调
+    toptitle=6pt,            % 标题上方留白
+    bottomtitle=4pt,         % 标题到黑线的留白
+    top=10pt,                % 黑线到正文的距离
+    left=10pt, right=10pt, bottom=10pt
+}
+
+\begin{document}
+
+\section{Assignment Overview}
+
+\paragraph{What you will implement}
+
+% itemsep: 项与项之间的额外距离
+% parsep: 项内如果分段的距离
+% topsep: 列表顶部与上方文字的距离
+\begin{enumerate}[itemsep=0pt, parsep=0pt, topsep=0pt]
+    \item Byte-pair encoding (BPE) tokenizer \hfill \tcbox[on line, boxsep=0pt, left=2pt, right=2pt, top=2pt, bottom=2pt, colback=green!10, colframe=green!50!black, fontupper=\tiny\bfseries]{DONE}
+    \item Transformer language model (LM)
+    \item The cross-entropy loss function and the AdamW optimizer
+    \item The training loop, with support for serializing and loading model and optimizer state
+\end{enumerate}
+
+\paragraph{What you will run}
+
+\begin{enumerate}[itemsep=0pt, parsep=0pt, topsep=0pt]
+    \item Train a BPE tokenizer on the TinyStories dataset. \hfill \tcbox[on line, boxsep=0pt, left=2pt, right=2pt, top=2pt, bottom=2pt, colback=green!10, colframe=green!50!black, fontupper=\tiny\bfseries]{DONE}
+    \item Run your trained tokenizer on the dataset to convert it into a sequence of integer IDs.
+    \item Train a Transformer LM on the TinyStories dataset.
+    \item Generate samples and evaluate perplexity using the trained Transformer LM.
+    \item Train models on OpenWebText and submit your attained perplexities to a leaderboard.
+\end{enumerate}
+
+\section{Byte-Pair Encoding (BPE) Tokenizer}
+\subsection{The Unicode Standard}
+
+In Python, you can use the \mintinline{python}{ord()} function to convert a single Unicode character into its integer representation.
+The \mintinline{python}{chr()} function converts an integer Unicode code point into a string with the corresponding character.
+
+\begin{problembox}{unicode1}{Understanding Unicode (1 point)}
+
+    % 使用 enumitem 列表，设置标签格式和垂直间距
+    \begin{enumerate}[label=(\alph*), itemsep=0.5em, topsep=0pt]
+
+        \item What Unicode character does \texttt{chr(0)} return? \\
+              \textbf{Deliverable:} A one-sentence response.
+
+        \item How does this character's string representation (\texttt{\_\_repr\_\_()}) differ from its printed representation? \\
+              \textbf{Deliverable:} A one-sentence response.
+
+        \item What happens when this character occurs in text? It may be helpful to play around with the following in your Python interpreter and see if it matches your expectations:
+
+              % 使用 minted 环境，xleftmargin 确保代码与列表文字对齐
+              \begin{minted}[xleftmargin=1.5em, framesep=5pt]{python}
+>>> chr(0)
+>>> print(chr(0))
+>>> "this is a test" + chr(0) + "string"
+>>> print("this is a test" + chr(0) + "string")
+\end{minted}
+
+              \textbf{Deliverable:} A one-sentence response.
+
+    \end{enumerate}
+
+\end{problembox}
+
+\end{document}

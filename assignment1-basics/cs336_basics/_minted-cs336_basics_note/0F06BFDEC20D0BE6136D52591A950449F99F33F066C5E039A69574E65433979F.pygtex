@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+    \PYG{o}{\PYGZgt{}\PYGZgt{}\PYGZgt{}} \PYG{n+nb}{ord}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}牛\PYGZsq{}}\PYG{p}{)}
+    \PYG{l+m+mi}{29275}
+    \PYG{o}{\PYGZgt{}\PYGZgt{}\PYGZgt{}} \PYG{n+nb}{chr}\PYG{p}{(}\PYG{l+m+mi}{29275}\PYG{p}{)}
+    \PYG{l+s+s1}{\PYGZsq{}牛\PYGZsq{}}
+\end{Verbatim}

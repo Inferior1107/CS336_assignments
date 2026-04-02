@@ -122,20 +122,21 @@ this is a teststring
               \textbf{Answer:} \mintinline{python}{'\x00'}
 
         \item Consider the following (incorrect) function, which is intended to decode a UTF-8 byte string into a Unicode string. Why is this function incorrect? Provide an example of an input byte string that yields incorrect results. \\
-              \textbf{Example:} \mintinline{python}{b'\xe4\xb8\xad'}.\\
-              \textbf{Answer:} This function is incorrect because it attempts to decode each byte individually, which fails for any character encoded as a multi-byte sequence, resulting in a \mintinline{python}{UnicodeDecodeError}.
-
+              \vspace{-1.5em}
               \begin{minted}[xleftmargin=1.5em, framesep=5pt]{python}
 def decode_utf8_bytes_to_str_wrong(bytestring: bytes): 
     return "".join([bytes([b]).decode("utf-8") for b in bytestring])
 \end{minted}
 
-              \vspace{-0.5em}
+              \vspace{-1.5em}
 
               \begin{minted}[xleftmargin=1.5em, framesep=5pt]{pycon}
 >>> decode_utf8_bytes_to_str_wrong("hello".encode("utf-8"))
 'hello'
 \end{minted}
+
+              \textbf{Example:} \mintinline{python}{b'\xe4\xb8\xad'}.\\
+              \textbf{Answer:} This function is incorrect because it attempts to decode each byte individually, which fails for any character encoded as a multi-byte sequence, resulting in a \mintinline{python}{UnicodeDecodeError}.
 
         \item Give a two byte sequence that does not decode to any Unicode character(s).\\
               \textbf{Example:} \mintinline{python}{b'\xff\xff'}.\\
@@ -144,5 +145,7 @@ def decode_utf8_bytes_to_str_wrong(bytestring: bytes):
     \end{enumerate}
 
 \end{problembox}
+
+
 
 \end{document}

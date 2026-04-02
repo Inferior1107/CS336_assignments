@@ -1,12 +1,12 @@
 # Fdb version 4
-["xdvipdfmx"] 1775144882.84921 "main.xdv" "main.pdf" "main" 1775144882.9523 0
-  "main.xdv" 1775144882.81211 59840 4c89aac0e5c026d6cb72c35331d8bb46 "xelatex"
+["xdvipdfmx"] 1775153131.69739 "main.xdv" "main.pdf" "main" 1775153131.80101 0
+  "main.xdv" 1775153131.65894 59840 4cd32e8f97abfdfb9142904ddf4729c5 "xelatex"
   (generated)
   "main.pdf"
   (rewritten before read)
-["xelatex"] 1775144882.28606 "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" "main.xdv" "main" 1775144882.95135 0
+["xelatex"] 1775153131.12179 "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" "main.xdv" "main" 1775153131.80001 0
   "/etc/texmf/web2c/texmf.cnf" 1775129653.52581 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" 1775144882.23596 5901 603b59db9a51ab7532cf7419949375c1 ""
+  "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" 1775153131.06588 5933 66f8a55bc322e341ec35adffb52d0f5d ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmr10.tfm" 1136768653 1296 45809c5a464d5f32c8f98ba97c1bb47f ""
   "/usr/share/texlive/texmf-dist/tex/generic/catchfile/catchfile.sty" 1576016007 8622 63834878edeb14dd71d58d8f22bc3e06 ""
@@ -187,8 +187,8 @@
   "_minted-main/F0BD6975D9FC7A03EE0AAE2C2B0BE4FD377D2AA7CAC59F8F10B4B3E16FE511A1.pygtex" 1775141839.85976 838 dc670ccf116812727e1f887da37c156f ""
   "_minted-main/F96C205E418EB88D26FFA4689D584B05541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775141508.84549 120 ff2ea85d9ee2f5c11135f9dd91a4f1c1 ""
   "_minted-main/default.pygstyle" 1775139963.7386 6428 74aba51736a5bc6590f8f7dd413c6f27 ""
-  "main.aux" 1775144882.81092 1697 97b437bacfd28073d37a51d679feacf2 "xelatex"
-  "main.tex" 1775144882.23596 5901 603b59db9a51ab7532cf7419949375c1 ""
+  "main.aux" 1775153131.65788 1697 75bd60f20e6309fc04db6178d5c88704 "xelatex"
+  "main.tex" 1775153131.06588 5933 66f8a55bc322e341ec35adffb52d0f5d ""
   (generated)
   "main.aux"
   "main.log"

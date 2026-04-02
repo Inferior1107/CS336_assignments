@@ -1,0 +1,4 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{decode\PYGZus{}utf8\PYGZus{}bytes\PYGZus{}to\PYGZus{}str\PYGZus{}wrong}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}hello\PYGZdq{}}\PYG{o}{.}\PYG{n}{encode}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}utf\PYGZhy{}8\PYGZdq{}}\PYG{p}{))}
+\PYG{g+go}{\PYGZsq{}hello\PYGZsq{}}
+\end{Verbatim}

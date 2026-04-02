@@ -70,6 +70,8 @@
 
 \newpage
 
+
+% next section
 \section{Byte-Pair Encoding (BPE) Tokenizer}
 \subsection{The Unicode Standard}
 
@@ -103,6 +105,43 @@ this is a teststring
 \end{minted}
 
 
+
+    \end{enumerate}
+
+\end{problembox}
+
+\newpage
+\subsection{Unicode Encodings}
+
+\begin{itemize}[itemsep=0pt, parsep=0pt, topsep=0pt]
+    \item UTF-8: The Efficient Variable-Length Encoder, It uses 1 to 4 bytes per character.
+    \item UTF-16: The Middle Ground, It uses either 2 or 4 bytes per character.
+    \item UTF-32: The Simple Fixed-Length Encoder, It uses exactly 4 bytes for every character, regardless of what it is.
+\end{itemize}
+
+\begin{problembox}{unicode2}{Unicode Encodings (3 point)}
+
+    % 使用 enumitem 列表，设置标签格式和垂直间距
+    \begin{enumerate}[label=(\alph*), itemsep=0.5em, topsep=0pt]
+
+        \item What are some reasons to prefer training our tokenizer on UTF-8 encoded bytes, rather than UTF-16 or UTF-32? It may be helpful to compare the output of these encodings for various input strings.\\
+              \textbf{Answer:} \mintinline{python}{'\x00'}
+
+        \item Consider the following (incorrect) function, which is intended to decode a UTF-8 byte string into a Unicode string. Why is this function incorrect? Provide an example of an input byte string that yields incorrect results. \\
+              \textbf{Example:} \mintinline{python}{b'\xe4\xb8\xad'}.\\
+              \textbf{Answer:} This function is incorrect because it attempts to decode each byte individually, which fails for any character encoded as a multi-byte sequence, resulting in a \mintinline{python}{UnicodeDecodeError}.
+
+              \begin{minted}[xleftmargin=1.5em, framesep=5pt]{python}
+def decode_utf8_bytes_to_str_wrong(bytestring: bytes): 
+    return "".join([bytes([b]).decode("utf-8") for b in bytestring])
+\end{minted}
+              \begin{minted}[xleftmargin=1.5em, framesep=5pt]{pycon}
+>>> decode_utf8_bytes_to_str_wrong("hello".encode("utf-8"))
+'hello'
+\end{minted}
+        \item Give a two byte sequence that does not decode to any Unicode character(s).\\
+              \textbf{Example:} \mintinline{python}{b'\xff\xff'}.\\
+              \textbf{Answer:} This sequence is invalid because the byte \mintinline{python}{0xFF} is explicitly forbidden in the UTF-8 standard and does not correspond to any valid lead or continuation byte in the encoding scheme.
 
     \end{enumerate}
 

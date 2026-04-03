@@ -1,0 +1,7 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{PAT} \PYG{o}{=} \PYG{l+s+sa}{r}\PYG{l+s+s2}{\PYGZdq{}\PYGZdq{}\PYGZdq{}\PYGZsq{}(?:[sdmt]|ll|ve|re)| ?\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}L\PYGZcb{}}\PYG{l+s+s2}{+| ?\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}N\PYGZcb{}}\PYG{l+s+s2}{+| ?[\PYGZca{}\PYGZbs{}s\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}L\PYGZcb{}}\PYG{l+s+s2}{\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}N\PYGZcb{}}\PYG{l+s+s2}{]+|\PYGZbs{}s+(?!\PYGZbs{}S)|\PYGZbs{}s+\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{c+c1}{\PYGZsh{} requires `regex` package}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{k+kn}{import} \PYG{n+nn}{regex} \PYG{k}{as} \PYG{n+nn}{re}
+\PYG{g+gp}{\PYGZgt{}\PYGZgt{}\PYGZgt{} }\PYG{n}{re}\PYG{o}{.}\PYG{n}{findall}\PYG{p}{(}\PYG{n}{PAT}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}some text that i\PYGZsq{}ll pre\PYGZhy{}tokenize\PYGZdq{}}\PYG{p}{)}
+\PYG{g+go}{[\PYGZsq{}some\PYGZsq{}, \PYGZsq{} text\PYGZsq{}, \PYGZsq{} that\PYGZsq{}, \PYGZsq{} i\PYGZsq{}, \PYGZdq{}\PYGZsq{}ll\PYGZdq{}, \PYGZsq{} pre\PYGZsq{}, \PYGZsq{}\PYGZhy{}\PYGZsq{}, \PYGZsq{}tokenize\PYGZsq{}]}
+\end{Verbatim}

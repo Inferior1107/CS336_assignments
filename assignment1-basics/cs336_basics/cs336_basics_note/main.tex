@@ -146,6 +146,34 @@ def decode_utf8_bytes_to_str_wrong(bytestring: bytes):
 
 \end{problembox}
 
+\subsection{Subword Tokenization}
+
+Sennrich et al. [2016] propose to use byte-pair encoding (BPE; Gage, 1994), a compression algorithm that iteratively replaces (``merges'') the most frequent pair of bytes with a single, new unused index.
+
+\subsection{BPE Tokenizer Training}
+
+\paragraph{Vocabulary initialization}
+
+\paragraph{Pre-tokenization}
+Use regular expressions to split the sentence into independent punctuation marks and independent items that may include spaces, and improve the merging effect by counting the occurrence frequency of these independent items.
+\begin{minted}[xleftmargin=1.5em, framesep=5pt]{pycon}
+>>> PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+>>> # requires `regex` package
+>>> import regex as re
+>>> re.findall(PAT, "some text that i'll pre-tokenize")
+['some', ' text', ' that', ' i', "'ll", ' pre', '-', 'tokenize']
+\end{minted}
+
+\paragraph{Compute BPE merges} During the BPE merging process, two \textbf{principles} must be followed:
+
+\begin{itemize}[itemsep=0pt, parsep=0pt, topsep=0pt]
+    \item Do not \textbf{cross} pre-tokenization boundaries (this is already guaranteed algorithmically);
+    \item Handle issues with a \textbf{reproducible conflict resolution strategy}, such as selecting the lexicographically largest word pair to merge when the occurrence counts are the same.
+\end{itemize}
+
+\paragraph{Special tokens}
+
+\subsection{Experimenting with BPE Tokenizer Training}
 
 
 \end{document}

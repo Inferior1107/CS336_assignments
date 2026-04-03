@@ -175,5 +175,10 @@ Use regular expressions to split the sentence into independent punctuation marks
 
 \subsection{Experimenting with BPE Tokenizer Training}
 
+\paragraph{Parallelizing pre-tokenization} Using the provided segmentation code and the \mintinline{python}{multiprocessing} library, parallelize the tokenization statistics.
+
+\paragraph{Removing special tokens before pre-tokenization}
+
+\paragraph{Optimizing the merging step} After performing a statistical pass to obtain a tokenization table with frequencies, perform merging only within that tokenization table.
 
 \end{document}

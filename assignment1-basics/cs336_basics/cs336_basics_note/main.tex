@@ -45,6 +45,29 @@
     bottom=10pt
 }
 
+\newtcolorbox{tipbox}[1]{
+    enhanced,
+    sharp corners,
+    boxrule=2pt,               % 边框稍微加粗一点以匹配截图的视觉效果
+    colframe=blue,             % 边框颜色改为纯蓝色
+    colback=white,
+    colbacktitle=white,
+    coltitle=black,
+    fonttitle=\bfseries,
+    title={Low-Resource/Downscaling Tip: #1}, % 固定前缀，#1 接收自定义标题
+    titlerule=0pt,
+    overlay={
+        % 调整了 xshift=10pt，使其与下方正文的 left=10pt 和 right=10pt 完美对齐
+        \draw[black, line width=0.4pt] ([xshift=10pt, yshift=2pt]title.south west) -- ([xshift=-10pt, yshift=2pt]title.south east);
+    },
+    toptitle=8pt,
+    bottomtitle=6pt,
+    top=8pt,
+    left=10pt,
+    right=10pt,
+    bottom=10pt
+}
+
 \begin{document}
 
 \section{Assignment Overview}
@@ -180,5 +203,9 @@ Use regular expressions to split the sentence into independent punctuation marks
 \paragraph{Removing special tokens before pre-tokenization}
 
 \paragraph{Optimizing the merging step} After performing a statistical pass to obtain a tokenization table with frequencies, perform merging only within that tokenization table.
+
+\begin{tipbox}{Profiling}
+    You should use profiling tools like \texttt{cProfile} or \texttt{scalene} to identify the bottlenecks in your implementation, and focus on optimizing those.
+\end{tipbox}
 
 \end{document}

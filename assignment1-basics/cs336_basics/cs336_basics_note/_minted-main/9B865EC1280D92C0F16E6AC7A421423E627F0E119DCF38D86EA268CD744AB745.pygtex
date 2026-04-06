@@ -1,0 +1,139 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{use}\PYG{+w}{ }\PYG{n}{pyo3}::\PYG{n}{prelude}::\PYG{o}{*}\PYG{p}{;}
+\PYG{c+c1}{// 🚀 修改点 1：回归标准库的 HashMap 和 HashSet，PyO3 能完美识别它们}
+\PYG{k}{use}\PYG{+w}{ }\PYG{n}{std}::\PYG{n}{collections}::\PYG{p}{\PYGZob{}}\PYG{n}{HashMap}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{HashSet}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{BinaryHeap}\PYG{p}{\PYGZcb{};}
+\PYG{k}{use}\PYG{+w}{ }\PYG{n}{std}::\PYG{n}{cmp}::\PYG{n}{Ordering}\PYG{p}{;}
+
+\PYG{c+cp}{\PYGZsh{}[derive(Eq, PartialEq)]}
+\PYG{k}{struct} \PYG{n+nc}{HeapItem}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{count}: \PYG{k+kt}{usize}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{pair}: \PYG{p}{(}\PYG{k+kt}{u32}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{u32}\PYG{p}{),}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{k}{impl}\PYG{+w}{ }\PYG{n+nb}{Ord}\PYG{+w}{ }\PYG{k}{for}\PYG{+w}{ }\PYG{n}{HeapItem}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{fn} \PYG{n+nf}{cmp}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n+nb+bp}{self}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{other}: \PYG{k+kp}{\PYGZam{}}\PYG{n+nc}{Self}\PYG{p}{)}\PYG{+w}{ }\PYGZhy{}\PYGZgt{} \PYG{n+nc}{Ordering}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n+nb+bp}{self}\PYG{p}{.}\PYG{n}{count}\PYG{p}{.}\PYG{n}{cmp}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{other}\PYG{p}{.}\PYG{n}{count}\PYG{p}{)}
+\PYG{+w}{            }\PYG{p}{.}\PYG{n}{then\PYGZus{}with}\PYG{p}{(}\PYG{o}{||}\PYG{+w}{ }\PYG{n+nb+bp}{self}\PYG{p}{.}\PYG{n}{pair}\PYG{p}{.}\PYG{n}{cmp}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{other}\PYG{p}{.}\PYG{n}{pair}\PYG{p}{))}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{k}{impl}\PYG{+w}{ }\PYG{n+nb}{PartialOrd}\PYG{+w}{ }\PYG{k}{for}\PYG{+w}{ }\PYG{n}{HeapItem}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{k}{fn} \PYG{n+nf}{partial\PYGZus{}cmp}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n+nb+bp}{self}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{other}: \PYG{k+kp}{\PYGZam{}}\PYG{n+nc}{Self}\PYG{p}{)}\PYG{+w}{ }\PYGZhy{}\PYGZgt{} \PYG{n+nb}{Option}\PYG{o}{\PYGZlt{}}\PYG{n}{Ordering}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n+nb}{Some}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{.}\PYG{n}{cmp}\PYG{p}{(}\PYG{n}{other}\PYG{p}{))}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+cp}{\PYGZsh{}[pyfunction]}
+\PYG{k}{fn} \PYG{n+nf}{train\PYGZus{}bpe\PYGZus{}rust}\PYG{p}{(}
+\PYG{+w}{    }\PYG{n}{global\PYGZus{}counts}: \PYG{n+nc}{HashMap}\PYG{o}{\PYGZlt{}}\PYG{n+nb}{Vec}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{u8}\PYG{o}{\PYGZgt{}}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{usize}\PYG{o}{\PYGZgt{}}\PYG{p}{,}
+\PYG{+w}{    }\PYG{n}{target\PYGZus{}vocab\PYGZus{}size}: \PYG{k+kt}{usize}\PYG{p}{,}
+\PYG{p}{)}\PYG{+w}{ }\PYGZhy{}\PYGZgt{} \PYG{n+nc}{PyResult}\PYG{o}{\PYGZlt{}}\PYG{p}{(}\PYG{n+nb}{Vec}\PYG{o}{\PYGZlt{}}\PYG{p}{(}\PYG{n+nb}{Vec}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{u8}\PYG{o}{\PYGZgt{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{Vec}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{u8}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{HashMap}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{usize}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{Vec}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{u8}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{p}{)}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }
+\PYG{+w}{    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{vocab}: \PYG{n+nc}{HashMap}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{u32}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nb}{Vec}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{u8}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{o}{..}\PYG{l+m+mi}{256}\PYG{p}{)}
+\PYG{+w}{        }\PYG{p}{.}\PYG{n}{map}\PYG{p}{(}\PYG{o}{|}\PYG{n}{i}\PYG{o}{|}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{i}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{k+kt}{u32}\PYG{p}{,}\PYG{+w}{ }\PYG{n+nf+fm}{vec!}\PYG{p}{[}\PYG{n}{i}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{k+kt}{u8}\PYG{p}{]))}
+\PYG{+w}{        }\PYG{p}{.}\PYG{n}{collect}\PYG{p}{();}
+\PYG{+w}{    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{next\PYGZus{}id}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{256}\PYG{k}{u32}\PYG{p}{;}
+\PYG{+w}{    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{num\PYGZus{}merges}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{target\PYGZus{}vocab\PYGZus{}size}\PYG{p}{.}\PYG{n}{saturating\PYGZus{}sub}\PYG{p}{(}\PYG{l+m+mi}{256}\PYG{p}{);}
+\PYG{+w}{    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{merges}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{Vec}::\PYG{n}{with\PYGZus{}capacity}\PYG{p}{(}\PYG{n}{num\PYGZus{}merges}\PYG{p}{);}
+
+\PYG{+w}{    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{words}: \PYG{n+nb}{Vec}\PYG{o}{\PYGZlt{}}\PYG{n+nb}{Vec}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{u32}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{Vec}::\PYG{n}{new}\PYG{p}{();}
+\PYG{+w}{    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{word\PYGZus{}freqs}: \PYG{n+nb}{Vec}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{usize}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{Vec}::\PYG{n}{new}\PYG{p}{();}
+\PYG{+w}{    }
+\PYG{+w}{    }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{bytes}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{freq}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{in}\PYG{+w}{ }\PYG{n}{global\PYGZus{}counts}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{n}{words}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{n}{bytes}\PYG{p}{.}\PYG{n}{into\PYGZus{}iter}\PYG{p}{().}\PYG{n}{map}\PYG{p}{(}\PYG{o}{|}\PYG{n}{b}\PYG{o}{|}\PYG{+w}{ }\PYG{n}{b}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{k+kt}{u32}\PYG{p}{).}\PYG{n}{collect}\PYG{p}{());}
+\PYG{+w}{        }\PYG{n}{word\PYGZus{}freqs}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{n}{freq}\PYG{p}{);}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{pair\PYGZus{}counts}: \PYG{n+nc}{HashMap}\PYG{o}{\PYGZlt{}}\PYG{p}{(}\PYG{k+kt}{u32}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{u32}\PYG{p}{),}\PYG{+w}{ }\PYG{k+kt}{usize}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{HashMap}::\PYG{n}{new}\PYG{p}{();}
+\PYG{+w}{    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{pair\PYGZus{}to\PYGZus{}words}: \PYG{n+nc}{HashMap}\PYG{o}{\PYGZlt{}}\PYG{p}{(}\PYG{k+kt}{u32}\PYG{p}{,}\PYG{+w}{ }\PYG{k+kt}{u32}\PYG{p}{),}\PYG{+w}{ }\PYG{n}{HashSet}\PYG{o}{\PYGZlt{}}\PYG{k+kt}{usize}\PYG{o}{\PYGZgt{}\PYGZgt{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{HashMap}::\PYG{n}{new}\PYG{p}{();}
+
+\PYG{+w}{    }\PYG{k}{for}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{idx}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{word\PYGZus{}ids}\PYG{p}{)}\PYG{+w}{ }\PYG{k}{in}\PYG{+w}{ }\PYG{n}{words}\PYG{p}{.}\PYG{n}{iter}\PYG{p}{().}\PYG{n}{enumerate}\PYG{p}{()}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{freq}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{word\PYGZus{}freqs}\PYG{p}{[}\PYG{n}{idx}\PYG{p}{];}
+\PYG{+w}{        }\PYG{k}{for}\PYG{+w}{ }\PYG{n}{pair}\PYG{+w}{ }\PYG{k}{in}\PYG{+w}{ }\PYG{n}{word\PYGZus{}ids}\PYG{p}{.}\PYG{n}{windows}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{pair}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{],}\PYG{+w}{ }\PYG{n}{pair}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]);}
+\PYG{+w}{            }\PYG{o}{*}\PYG{n}{pair\PYGZus{}counts}\PYG{p}{.}\PYG{n}{entry}\PYG{p}{(}\PYG{n}{p}\PYG{p}{).}\PYG{n}{or\PYGZus{}insert}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{+=}\PYG{+w}{ }\PYG{n}{freq}\PYG{p}{;}
+\PYG{+w}{            }\PYG{n}{pair\PYGZus{}to\PYGZus{}words}\PYG{p}{.}\PYG{n}{entry}\PYG{p}{(}\PYG{n}{p}\PYG{p}{).}\PYG{n}{or\PYGZus{}insert\PYGZus{}with}\PYG{p}{(}\PYG{n}{HashSet}::\PYG{n}{new}\PYG{p}{).}\PYG{n}{insert}\PYG{p}{(}\PYG{n}{idx}\PYG{p}{);}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{heap}: \PYG{n+nc}{BinaryHeap}\PYG{o}{\PYGZlt{}}\PYG{n}{HeapItem}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pair\PYGZus{}counts}\PYG{p}{.}\PYG{n}{iter}\PYG{p}{()}
+\PYG{+w}{        }\PYG{p}{.}\PYG{n}{map}\PYG{p}{(}\PYG{o}{|}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{pair}\PYG{p}{,}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{count}\PYG{p}{)}\PYG{o}{|}\PYG{+w}{ }\PYG{n}{HeapItem}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{count}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{pair}\PYG{+w}{ }\PYG{p}{\PYGZcb{})}
+\PYG{+w}{        }\PYG{p}{.}\PYG{n}{collect}\PYG{p}{();}
+
+\PYG{+w}{    }\PYG{k}{for}\PYG{+w}{ }\PYG{n}{\PYGZus{}}\PYG{+w}{ }\PYG{k}{in}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{o}{..}\PYG{n}{num\PYGZus{}merges}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{        }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{best\PYGZus{}pair}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{None}\PYG{p}{;}
+\PYG{+w}{        }\PYG{k}{while}\PYG{+w}{ }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n+nb}{Some}\PYG{p}{(}\PYG{n}{top}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{heap}\PYG{p}{.}\PYG{n}{pop}\PYG{p}{()}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{k}{if}\PYG{+w}{ }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n+nb}{Some}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{current\PYGZus{}count}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pair\PYGZus{}counts}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{top}\PYG{p}{.}\PYG{n}{pair}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                }\PYG{k}{if}\PYG{+w}{ }\PYG{n}{current\PYGZus{}count}\PYG{+w}{ }\PYG{o}{==}\PYG{+w}{ }\PYG{n}{top}\PYG{p}{.}\PYG{n}{count}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                    }\PYG{n}{best\PYGZus{}pair}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{Some}\PYG{p}{(}\PYG{n}{top}\PYG{p}{.}\PYG{n}{pair}\PYG{p}{);}
+\PYG{+w}{                    }\PYG{k}{break}\PYG{p}{;}
+\PYG{+w}{                }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{            }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{        }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{k}{match}\PYG{+w}{ }\PYG{n}{best\PYGZus{}pair}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{n+nb}{Some}\PYG{p}{(}\PYG{n}{p}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=\PYGZgt{}}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{,}
+\PYG{+w}{            }\PYG{n+nb}{None}\PYG{+w}{ }\PYG{o}{=\PYGZgt{}}\PYG{+w}{ }\PYG{k}{break}\PYG{p}{,}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{};}
+
+\PYG{+w}{        }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{p1\PYGZus{}bytes}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{vocab}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{p}\PYG{p}{.}\PYG{l+m+mi}{0}\PYG{p}{).}\PYG{n}{unwrap}\PYG{p}{().}\PYG{n}{clone}\PYG{p}{();}
+\PYG{+w}{        }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{p2\PYGZus{}bytes}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{vocab}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{p}\PYG{p}{.}\PYG{l+m+mi}{1}\PYG{p}{).}\PYG{n}{unwrap}\PYG{p}{().}\PYG{n}{clone}\PYG{p}{();}
+\PYG{+w}{        }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{new\PYGZus{}token\PYGZus{}bytes}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{p1\PYGZus{}bytes}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{new\PYGZus{}token\PYGZus{}bytes}\PYG{p}{.}\PYG{n}{extend}\PYG{p}{(}\PYG{n}{p2\PYGZus{}bytes}\PYG{p}{);}
+\PYG{+w}{        }
+\PYG{+w}{        }\PYG{n}{merges}\PYG{p}{.}\PYG{n}{push}\PYG{p}{((}\PYG{n}{vocab}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{p}\PYG{p}{.}\PYG{l+m+mi}{0}\PYG{p}{).}\PYG{n}{unwrap}\PYG{p}{().}\PYG{n}{clone}\PYG{p}{(),}\PYG{+w}{ }\PYG{n}{vocab}\PYG{p}{.}\PYG{n}{get}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{p}\PYG{p}{.}\PYG{l+m+mi}{1}\PYG{p}{).}\PYG{n}{unwrap}\PYG{p}{().}\PYG{n}{clone}\PYG{p}{()));}
+\PYG{+w}{        }\PYG{n}{vocab}\PYG{p}{.}\PYG{n}{insert}\PYG{p}{(}\PYG{n}{next\PYGZus{}id}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{new\PYGZus{}token\PYGZus{}bytes}\PYG{p}{);}
+\PYG{+w}{        }
+\PYG{+w}{        }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{new\PYGZus{}id}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{next\PYGZus{}id}\PYG{p}{;}
+\PYG{+w}{        }\PYG{n}{next\PYGZus{}id}\PYG{+w}{ }\PYG{o}{+=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+
+\PYG{+w}{        }\PYG{k}{if}\PYG{+w}{ }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n+nb}{Some}\PYG{p}{(}\PYG{n}{word\PYGZus{}indices}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pair\PYGZus{}to\PYGZus{}words}\PYG{p}{.}\PYG{n}{remove}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{p}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{            }\PYG{n}{pair\PYGZus{}counts}\PYG{p}{.}\PYG{n}{remove}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{p}\PYG{p}{);}
+
+\PYG{+w}{            }\PYG{k}{for}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{word\PYGZus{}idx}\PYG{+w}{ }\PYG{k}{in}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{word\PYGZus{}indices}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{freq}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{word\PYGZus{}freqs}\PYG{p}{[}\PYG{n}{word\PYGZus{}idx}\PYG{p}{];}
+\PYG{+w}{                }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{old\PYGZus{}ids}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{words}\PYG{p}{[}\PYG{n}{word\PYGZus{}idx}\PYG{p}{];}
+\PYG{+w}{                }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{new\PYGZus{}ids}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n+nb}{Vec}::\PYG{n}{new}\PYG{p}{();}
+\PYG{+w}{                }
+\PYG{+w}{                }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{k}{mut}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{l+m+mi}{0}\PYG{p}{;}
+\PYG{+w}{                }\PYG{k}{while}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{old\PYGZus{}ids}\PYG{p}{.}\PYG{n}{len}\PYG{p}{()}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                    }\PYG{k}{if}\PYG{+w}{ }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{\PYGZlt{}}\PYG{+w}{ }\PYG{n}{old\PYGZus{}ids}\PYG{p}{.}\PYG{n}{len}\PYG{p}{()}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{o}{\PYGZam{}\PYGZam{}}\PYG{+w}{ }\PYG{n}{old\PYGZus{}ids}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{==}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{.}\PYG{l+m+mi}{0}\PYG{+w}{ }\PYG{o}{\PYGZam{}\PYGZam{}}\PYG{+w}{ }\PYG{n}{old\PYGZus{}ids}\PYG{p}{[}\PYG{n}{i}\PYG{o}{+}\PYG{l+m+mi}{1}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{==}\PYG{+w}{ }\PYG{n}{p}\PYG{p}{.}\PYG{l+m+mi}{1}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                        }\PYG{n}{new\PYGZus{}ids}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{n}{new\PYGZus{}id}\PYG{p}{);}
+\PYG{+w}{                        }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{+=}\PYG{+w}{ }\PYG{l+m+mi}{2}\PYG{p}{;}
+\PYG{+w}{                    }\PYG{p}{\PYGZcb{}}\PYG{+w}{ }\PYG{k}{else}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                        }\PYG{n}{new\PYGZus{}ids}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{n}{old\PYGZus{}ids}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]);}
+\PYG{+w}{                        }\PYG{n}{i}\PYG{+w}{ }\PYG{o}{+=}\PYG{+w}{ }\PYG{l+m+mi}{1}\PYG{p}{;}
+\PYG{+w}{                    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{                }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{                }
+\PYG{+w}{                }\PYG{k}{for}\PYG{+w}{ }\PYG{n}{pair}\PYG{+w}{ }\PYG{k}{in}\PYG{+w}{ }\PYG{n}{old\PYGZus{}ids}\PYG{p}{.}\PYG{n}{windows}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{old\PYGZus{}p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{pair}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{],}\PYG{+w}{ }\PYG{n}{pair}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]);}
+\PYG{+w}{                    }\PYG{k}{if}\PYG{+w}{ }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n+nb}{Some}\PYG{p}{(}\PYG{n}{count}\PYG{p}{)}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pair\PYGZus{}counts}\PYG{p}{.}\PYG{n}{get\PYGZus{}mut}\PYG{p}{(}\PYG{o}{\PYGZam{}}\PYG{n}{old\PYGZus{}p}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                        }\PYG{o}{*}\PYG{n}{count}\PYG{+w}{ }\PYG{o}{\PYGZhy{}=}\PYG{+w}{ }\PYG{n}{freq}\PYG{p}{;}
+\PYG{+w}{                    }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{                }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{                }\PYG{n}{words}\PYG{p}{[}\PYG{n}{word\PYGZus{}idx}\PYG{p}{]}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{new\PYGZus{}ids}\PYG{p}{;}
+\PYG{+w}{                }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{updated\PYGZus{}ids}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{o}{\PYGZam{}}\PYG{n}{words}\PYG{p}{[}\PYG{n}{word\PYGZus{}idx}\PYG{p}{];}
+\PYG{+w}{                }\PYG{k}{for}\PYG{+w}{ }\PYG{n}{pair}\PYG{+w}{ }\PYG{k}{in}\PYG{+w}{ }\PYG{n}{updated\PYGZus{}ids}\PYG{p}{.}\PYG{n}{windows}\PYG{p}{(}\PYG{l+m+mi}{2}\PYG{p}{)}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{                    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{new\PYGZus{}p}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{pair}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{],}\PYG{+w}{ }\PYG{n}{pair}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]);}
+\PYG{+w}{                    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{count}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{pair\PYGZus{}counts}\PYG{p}{.}\PYG{n}{entry}\PYG{p}{(}\PYG{n}{new\PYGZus{}p}\PYG{p}{).}\PYG{n}{or\PYGZus{}insert}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{);}
+\PYG{+w}{                    }\PYG{o}{*}\PYG{n}{count}\PYG{+w}{ }\PYG{o}{+=}\PYG{+w}{ }\PYG{n}{freq}\PYG{p}{;}
+\PYG{+w}{                    }\PYG{n}{pair\PYGZus{}to\PYGZus{}words}\PYG{p}{.}\PYG{n}{entry}\PYG{p}{(}\PYG{n}{new\PYGZus{}p}\PYG{p}{).}\PYG{n}{or\PYGZus{}insert\PYGZus{}with}\PYG{p}{(}\PYG{n}{HashSet}::\PYG{n}{new}\PYG{p}{).}\PYG{n}{insert}\PYG{p}{(}\PYG{n}{word\PYGZus{}idx}\PYG{p}{);}
+\PYG{+w}{                    }\PYG{n}{heap}\PYG{p}{.}\PYG{n}{push}\PYG{p}{(}\PYG{n}{HeapItem}\PYG{+w}{ }\PYG{p}{\PYGZob{}}\PYG{+w}{ }\PYG{n}{count}: \PYG{o}{*}\PYG{n}{count}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{pair}: \PYG{n+nc}{new\PYGZus{}p}\PYG{+w}{ }\PYG{p}{\PYGZcb{});}
+\PYG{+w}{                }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{            }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{        }\PYG{p}{\PYGZcb{}}
+\PYG{+w}{    }\PYG{p}{\PYGZcb{}}
+
+\PYG{+w}{    }\PYG{k+kd}{let}\PYG{+w}{ }\PYG{n}{final\PYGZus{}vocab}\PYG{+w}{ }\PYG{o}{=}\PYG{+w}{ }\PYG{n}{vocab}\PYG{p}{.}\PYG{n}{into\PYGZus{}iter}\PYG{p}{().}\PYG{n}{map}\PYG{p}{(}\PYG{o}{|}\PYG{p}{(}\PYG{n}{k}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)}\PYG{o}{|}\PYG{+w}{ }\PYG{p}{(}\PYG{n}{k}\PYG{+w}{ }\PYG{k}{as}\PYG{+w}{ }\PYG{k+kt}{usize}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{v}\PYG{p}{)).}\PYG{n}{collect}\PYG{p}{();}
+\PYG{+w}{    }\PYG{n+nb}{Ok}\PYG{p}{((}\PYG{n}{merges}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{final\PYGZus{}vocab}\PYG{p}{))}
+\PYG{p}{\PYGZcb{}}
+
+\PYG{c+c1}{// 🚀 修改点 2：适配最新版 PyO3 的 Bound API 签名}
+\PYG{c+cp}{\PYGZsh{}[pymodule]}
+\PYG{k}{fn} \PYG{n+nf}{fast\PYGZus{}bpe}\PYG{p}{(}\PYG{n}{m}: \PYG{k+kp}{\PYGZam{}}\PYG{n+nc}{Bound}\PYG{o}{\PYGZlt{}\PYGZsq{}}\PYG{n+nb}{\PYGZus{}}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{pyo3}::\PYG{n}{types}::\PYG{n}{PyModule}\PYG{o}{\PYGZgt{}}\PYG{p}{)}\PYG{+w}{ }\PYGZhy{}\PYGZgt{} \PYG{n+nc}{PyResult}\PYG{o}{\PYGZlt{}}\PYG{p}{()}\PYG{o}{\PYGZgt{}}\PYG{+w}{ }\PYG{p}{\PYGZob{}}
+\PYG{+w}{    }\PYG{n}{m}\PYG{p}{.}\PYG{n}{add\PYGZus{}function}\PYG{p}{(}\PYG{n}{wrap\PYGZus{}pyfunction}\PYG{o}{!}\PYG{p}{(}\PYG{n}{train\PYGZus{}bpe\PYGZus{}rust}\PYG{p}{,}\PYG{+w}{ }\PYG{n}{m}\PYG{p}{)}\PYG{o}{?}\PYG{p}{)}\PYG{o}{?}\PYG{p}{;}
+\PYG{+w}{    }\PYG{n+nb}{Ok}\PYG{p}{(())}
+\PYG{p}{\PYGZcb{}}
+\end{Verbatim}

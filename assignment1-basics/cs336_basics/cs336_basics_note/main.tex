@@ -151,7 +151,7 @@ def decode_utf8_bytes_to_str_wrong(bytestring: bytes):
     return "".join([bytes([b]).decode("utf-8") for b in bytestring])
 \end{minted}
 
-              \vspace{-1.5em}
+              \vspace{-1em}
 
               \begin{minted}[xleftmargin=1.5em, framesep=5pt]{pycon}
 >>> decode_utf8_bytes_to_str_wrong("hello".encode("utf-8"))
@@ -168,7 +168,7 @@ def decode_utf8_bytes_to_str_wrong(bytestring: bytes):
     \end{enumerate}
 
 \end{problembox}
-
+\newpage
 \subsection{Subword Tokenization}
 
 Sennrich et al. [2016] propose to use byte-pair encoding (BPE; Gage, 1994), a compression algorithm that iteratively replaces (``merges'') the most frequent pair of bytes with a single, new unused index.
@@ -196,6 +196,8 @@ Use regular expressions to split the sentence into independent punctuation marks
 
 \paragraph{Special tokens}
 
+\newpage
+
 \subsection{Experimenting with BPE Tokenizer Training}
 
 \paragraph{Parallelizing pre-tokenization} Using the provided segmentation code and the \mintinline{python}{multiprocessing} library, parallelize the tokenization statistics.
@@ -207,5 +209,53 @@ Use regular expressions to split the sentence into independent punctuation marks
 \begin{tipbox}{Profiling}
     You should use profiling tools like \texttt{cProfile} or \texttt{scalene} to identify the bottlenecks in your implementation, and focus on optimizing those.
 \end{tipbox}
+
+\begin{problembox}{train\_bpe}{BPE Tokenizer Training (15 points)}
+
+    \qquad \textbf{Deliverable:} Write a function that, given a path to an input text file, trains a (byte-level) BPE tokenizer. Your BPE training function should handle (at least) the following input parameters:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=0.8em, parsep=0pt]
+        \item \texttt{input\_path}: \textcolor{green!50!black}{\texttt{str}} Path to a text file with BPE tokenizer training data.
+
+        \item \texttt{vocab\_size}: \textcolor{green!50!black}{\texttt{int}} A positive integer that defines the maximum final vocabulary size (including the initial byte vocabulary, vocabulary items produced from merging, and any special tokens).
+
+        \item \texttt{special\_tokens}: \textcolor{green!50!black}{\texttt{list[str]}} A list of strings to add to the vocabulary. These special tokens do not otherwise affect BPE training.
+    \end{itemize}
+
+    Your BPE training function should return the resulting vocabulary and merges:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=0.8em, parsep=0pt]
+        \item \texttt{vocab}: \textcolor{green!50!black}{\texttt{dict[int, bytes]}} The tokenizer vocabulary, a mapping from \textcolor{green!50!black}{\texttt{int}} (token ID in the vocabulary) to \textcolor{green!50!black}{\texttt{bytes}} (token bytes).
+
+        \item \texttt{merges}: \textcolor{green!50!black}{\texttt{list[tuple[bytes, bytes]]}} A list of BPE merges produced from training. Each list item is a \textcolor{green!50!black}{\texttt{tuple}} of \textcolor{green!50!black}{\texttt{bytes}} (\texttt{<token1>}, \texttt{<token2>}), representing that \texttt{<token1>} was merged with \texttt{<token2>}. The merges should be ordered by order of creation.
+    \end{itemize}
+
+\end{problembox}
+
+\newpage
+\appendix
+\section{Complete Source Code}
+
+\subsection{Python BPE Trainer}
+% 引入 Python 代码
+\inputminted[
+    linenos,               % 显示行号
+    breaklines=true,       % 自动换行
+    fontsize=\footnotesize,% 缩小字号，避免代码占用过多页数
+    frame=lines,           % 上下加边框线
+    framesep=2mm
+]{python}{../test_function/bpe_trainer.py}
+
+\newpage
+
+\subsection{Fast BPE Implementation (Rust)}
+% 引入 Rust 代码
+\inputminted[
+    linenos,
+    breaklines=true,
+    fontsize=\footnotesize,
+    frame=lines,
+    framesep=2mm
+]{rust}{../../fast_bpe/src/lib.rs}
 
 \end{document}

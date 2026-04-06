@@ -122,7 +122,7 @@ if __name__ == "__main__":
     target_vocab_size = 32000
     special_tks = ["<|endoftext|>"]
     
-    print("--- 开始 BPE 训练任务 (Rust 终极加速版) ---")
+    print("--- 开始 BPE 训练任务 ---")
     start_time = time.time()
     
     vocab, merges = train_bpe(

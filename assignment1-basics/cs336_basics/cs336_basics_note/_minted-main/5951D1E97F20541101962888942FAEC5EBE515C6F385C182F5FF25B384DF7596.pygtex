@@ -1,0 +1,175 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import} \PYG{n+nn}{os}
+\PYG{k+kn}{import} \PYG{n+nn}{time}
+\PYG{k+kn}{import} \PYG{n+nn}{pickle}
+\PYG{k+kn}{import} \PYG{n+nn}{regex} \PYG{k}{as} \PYG{n+nn}{re}
+\PYG{k+kn}{import} \PYG{n+nn}{multiprocessing}
+\PYG{k+kn}{from} \PYG{n+nn}{typing} \PYG{k+kn}{import} \PYG{n}{BinaryIO}
+\PYG{k+kn}{from} \PYG{n+nn}{collections} \PYG{k+kn}{import} \PYG{n}{Counter}
+
+\PYG{c+c1}{\PYGZsh{} 🚀 导入你刚刚用 Rust 编译的终极加速模块！}
+\PYG{k+kn}{import} \PYG{n+nn}{fast\PYGZus{}bpe}
+
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+\PYG{c+c1}{\PYGZsh{} 1. 全局配置与正则定义}
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+
+\PYG{n}{PATTERN} \PYG{o}{=} \PYG{l+s+sa}{r}\PYG{l+s+s2}{\PYGZdq{}\PYGZdq{}\PYGZdq{}\PYGZsq{}(?:[sdmt]|ll|ve|re)| ?\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}L\PYGZcb{}}\PYG{l+s+s2}{+| ?\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}N\PYGZcb{}}\PYG{l+s+s2}{+| ?[\PYGZca{}\PYGZbs{}s\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}L\PYGZcb{}}\PYG{l+s+s2}{\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}N\PYGZcb{}}\PYG{l+s+s2}{]+|\PYGZbs{}s+(?!\PYGZbs{}S)|\PYGZbs{}s+\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{n}{PRETOKEN\PYGZus{}REGEX} \PYG{o}{=} \PYG{n}{re}\PYG{o}{.}\PYG{n}{compile}\PYG{p}{(}\PYG{n}{PATTERN}\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+\PYG{c+c1}{\PYGZsh{} 2. 多进程预分词辅助函数 (保持原样，Python 的强项)}
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+
+\PYG{k}{def} \PYG{n+nf}{process\PYGZus{}chunk\PYGZus{}with\PYGZus{}special\PYGZus{}tokens}\PYG{p}{(}\PYG{n}{chunk\PYGZus{}text}\PYG{p}{:} \PYG{n+nb}{str}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{],} \PYG{n}{pretoken\PYGZus{}regex}\PYG{p}{:} \PYG{n}{re}\PYG{o}{.}\PYG{n}{Pattern}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Counter}\PYG{p}{:}
+    \PYG{n}{split\PYGZus{}pattern} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}|\PYGZdq{}}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n+nb}{map}\PYG{p}{(}\PYG{n}{re}\PYG{o}{.}\PYG{n}{escape}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{))} \PYG{k}{if} \PYG{n}{special\PYGZus{}tokens} \PYG{k}{else} \PYG{l+s+s2}{\PYGZdq{}(?!)\PYGZdq{}}
+    \PYG{n}{text\PYGZus{}segments} \PYG{o}{=} \PYG{n}{re}\PYG{o}{.}\PYG{n}{split}\PYG{p}{(}\PYG{n}{split\PYGZus{}pattern}\PYG{p}{,} \PYG{n}{chunk\PYGZus{}text}\PYG{p}{)}
+    \PYG{n}{chunk\PYGZus{}counts} \PYG{o}{=} \PYG{n}{Counter}\PYG{p}{()}
+    \PYG{k}{for} \PYG{n}{segment} \PYG{o+ow}{in} \PYG{n}{text\PYGZus{}segments}\PYG{p}{:}
+        \PYG{k}{if} \PYG{o+ow}{not} \PYG{n}{segment}\PYG{p}{:} \PYG{k}{continue}
+        \PYG{k}{for} \PYG{n}{match} \PYG{o+ow}{in} \PYG{n}{pretoken\PYGZus{}regex}\PYG{o}{.}\PYG{n}{finditer}\PYG{p}{(}\PYG{n}{segment}\PYG{p}{):}
+            \PYG{n}{pre\PYGZus{}token} \PYG{o}{=} \PYG{n}{match}\PYG{o}{.}\PYG{n}{group}\PYG{p}{()}
+            \PYG{n}{byte\PYGZus{}token} \PYG{o}{=} \PYG{n}{pre\PYGZus{}token}\PYG{o}{.}\PYG{n}{encode}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}utf\PYGZhy{}8\PYGZdq{}}\PYG{p}{)}
+            \PYG{n}{chunk\PYGZus{}counts}\PYG{p}{[}\PYG{n}{byte\PYGZus{}token}\PYG{p}{]} \PYG{o}{+=} \PYG{l+m+mi}{1}
+    \PYG{k}{return} \PYG{n}{chunk\PYGZus{}counts}
+
+\PYG{k}{def} \PYG{n+nf}{find\PYGZus{}chunk\PYGZus{}boundaries}\PYG{p}{(}\PYG{n}{file}\PYG{p}{:} \PYG{n}{BinaryIO}\PYG{p}{,} \PYG{n}{desired\PYGZus{}num\PYGZus{}chunks}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,} \PYG{n}{split\PYGZus{}special\PYGZus{}token}\PYG{p}{:} \PYG{n+nb}{bytes}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{]:}
+    \PYG{k}{if} \PYG{o+ow}{not} \PYG{n}{split\PYGZus{}special\PYGZus{}token}\PYG{p}{:}
+        \PYG{n}{file}\PYG{o}{.}\PYG{n}{seek}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{,} \PYG{n}{os}\PYG{o}{.}\PYG{n}{SEEK\PYGZus{}END}\PYG{p}{)}
+        \PYG{n}{file\PYGZus{}size} \PYG{o}{=} \PYG{n}{file}\PYG{o}{.}\PYG{n}{tell}\PYG{p}{()}
+        \PYG{n}{chunk\PYGZus{}size} \PYG{o}{=} \PYG{n}{file\PYGZus{}size} \PYG{o}{//} \PYG{n}{desired\PYGZus{}num\PYGZus{}chunks}
+        \PYG{n}{boundaries} \PYG{o}{=} \PYG{p}{[}\PYG{n}{i} \PYG{o}{*} \PYG{n}{chunk\PYGZus{}size} \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{n}{desired\PYGZus{}num\PYGZus{}chunks} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{)]}
+        \PYG{n}{boundaries}\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{=} \PYG{n}{file\PYGZus{}size}
+        \PYG{k}{return} \PYG{n+nb}{sorted}\PYG{p}{(}\PYG{n+nb}{set}\PYG{p}{(}\PYG{n}{boundaries}\PYG{p}{))}
+
+    \PYG{k}{assert} \PYG{n+nb}{isinstance}\PYG{p}{(}\PYG{n}{split\PYGZus{}special\PYGZus{}token}\PYG{p}{,} \PYG{n+nb}{bytes}\PYG{p}{)}
+    \PYG{n}{file}\PYG{o}{.}\PYG{n}{seek}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{,} \PYG{n}{os}\PYG{o}{.}\PYG{n}{SEEK\PYGZus{}END}\PYG{p}{)}
+    \PYG{n}{file\PYGZus{}size} \PYG{o}{=} \PYG{n}{file}\PYG{o}{.}\PYG{n}{tell}\PYG{p}{()}
+    \PYG{n}{file}\PYG{o}{.}\PYG{n}{seek}\PYG{p}{(}\PYG{l+m+mi}{0}\PYG{p}{)}
+    \PYG{n}{chunk\PYGZus{}size} \PYG{o}{=} \PYG{n}{file\PYGZus{}size} \PYG{o}{//} \PYG{n}{desired\PYGZus{}num\PYGZus{}chunks}
+    \PYG{n}{chunk\PYGZus{}boundaries} \PYG{o}{=} \PYG{p}{[}\PYG{n}{i} \PYG{o}{*} \PYG{n}{chunk\PYGZus{}size} \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{n}{desired\PYGZus{}num\PYGZus{}chunks} \PYG{o}{+} \PYG{l+m+mi}{1}\PYG{p}{)]}
+    \PYG{n}{chunk\PYGZus{}boundaries}\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{=} \PYG{n}{file\PYGZus{}size}
+    \PYG{n}{mini\PYGZus{}chunk\PYGZus{}size} \PYG{o}{=} \PYG{l+m+mi}{4096} 
+    \PYG{k}{for} \PYG{n}{bi} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{l+m+mi}{1}\PYG{p}{,} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{chunk\PYGZus{}boundaries}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}\PYG{p}{):}
+        \PYG{n}{initial\PYGZus{}position} \PYG{o}{=} \PYG{n}{chunk\PYGZus{}boundaries}\PYG{p}{[}\PYG{n}{bi}\PYG{p}{]}
+        \PYG{n}{file}\PYG{o}{.}\PYG{n}{seek}\PYG{p}{(}\PYG{n}{initial\PYGZus{}position}\PYG{p}{)}
+        \PYG{k}{while} \PYG{k+kc}{True}\PYG{p}{:}
+            \PYG{n}{mini\PYGZus{}chunk} \PYG{o}{=} \PYG{n}{file}\PYG{o}{.}\PYG{n}{read}\PYG{p}{(}\PYG{n}{mini\PYGZus{}chunk\PYGZus{}size}\PYG{p}{)}
+            \PYG{k}{if} \PYG{n}{mini\PYGZus{}chunk} \PYG{o}{==} \PYG{l+s+sa}{b}\PYG{l+s+s2}{\PYGZdq{}\PYGZdq{}}\PYG{p}{:}
+                \PYG{n}{chunk\PYGZus{}boundaries}\PYG{p}{[}\PYG{n}{bi}\PYG{p}{]} \PYG{o}{=} \PYG{n}{file\PYGZus{}size}
+                \PYG{k}{break}
+            \PYG{n}{found\PYGZus{}at} \PYG{o}{=} \PYG{n}{mini\PYGZus{}chunk}\PYG{o}{.}\PYG{n}{find}\PYG{p}{(}\PYG{n}{split\PYGZus{}special\PYGZus{}token}\PYG{p}{)}
+            \PYG{k}{if} \PYG{n}{found\PYGZus{}at} \PYG{o}{!=} \PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{:}
+                \PYG{n}{chunk\PYGZus{}boundaries}\PYG{p}{[}\PYG{n}{bi}\PYG{p}{]} \PYG{o}{=} \PYG{n}{initial\PYGZus{}position} \PYG{o}{+} \PYG{n}{found\PYGZus{}at}
+                \PYG{k}{break}
+            \PYG{n}{initial\PYGZus{}position} \PYG{o}{+=} \PYG{n}{mini\PYGZus{}chunk\PYGZus{}size}
+    \PYG{k}{return} \PYG{n+nb}{sorted}\PYG{p}{(}\PYG{n+nb}{set}\PYG{p}{(}\PYG{n}{chunk\PYGZus{}boundaries}\PYG{p}{))}
+
+\PYG{k}{def} \PYG{n+nf}{worker\PYGZus{}task}\PYG{p}{(}\PYG{n}{file\PYGZus{}path}\PYG{p}{:} \PYG{n+nb}{str}\PYG{p}{,} \PYG{n}{start}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,} \PYG{n}{end}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{])} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Counter}\PYG{p}{:}
+    \PYG{k}{with} \PYG{n+nb}{open}\PYG{p}{(}\PYG{n}{file\PYGZus{}path}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}rb\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
+        \PYG{n}{f}\PYG{o}{.}\PYG{n}{seek}\PYG{p}{(}\PYG{n}{start}\PYG{p}{)}
+        \PYG{n}{chunk\PYGZus{}bytes} \PYG{o}{=} \PYG{n}{f}\PYG{o}{.}\PYG{n}{read}\PYG{p}{(}\PYG{n}{end} \PYG{o}{\PYGZhy{}} \PYG{n}{start}\PYG{p}{)}
+    \PYG{n}{chunk\PYGZus{}text} \PYG{o}{=} \PYG{n}{chunk\PYGZus{}bytes}\PYG{o}{.}\PYG{n}{decode}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}utf\PYGZhy{}8\PYGZdq{}}\PYG{p}{,} \PYG{n}{errors}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}ignore\PYGZdq{}}\PYG{p}{)}
+    \PYG{k}{return} \PYG{n}{process\PYGZus{}chunk\PYGZus{}with\PYGZus{}special\PYGZus{}tokens}\PYG{p}{(}\PYG{n}{chunk\PYGZus{}text}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{,} \PYG{n}{PRETOKEN\PYGZus{}REGEX}\PYG{p}{)}
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}parallel\PYGZus{}pretokenization}\PYG{p}{(}\PYG{n}{input\PYGZus{}path}\PYG{p}{:} \PYG{n+nb}{str}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{])} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Counter}\PYG{p}{:}
+    \PYG{n}{num\PYGZus{}workers} \PYG{o}{=} \PYG{n}{multiprocessing}\PYG{o}{.}\PYG{n}{cpu\PYGZus{}count}\PYG{p}{()}
+    \PYG{n}{num\PYGZus{}tasks} \PYG{o}{=} \PYG{n}{num\PYGZus{}workers} \PYG{o}{*} \PYG{l+m+mi}{4}
+    \PYG{n}{boundary\PYGZus{}token} \PYG{o}{=} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]}\PYG{o}{.}\PYG{n}{encode}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}utf\PYGZhy{}8\PYGZsq{}}\PYG{p}{)} \PYG{k}{if} \PYG{n}{special\PYGZus{}tokens} \PYG{k}{else} \PYG{l+s+sa}{b}\PYG{l+s+s2}{\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{with} \PYG{n+nb}{open}\PYG{p}{(}\PYG{n}{input\PYGZus{}path}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}rb\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
+        \PYG{n}{boundaries} \PYG{o}{=} \PYG{n}{find\PYGZus{}chunk\PYGZus{}boundaries}\PYG{p}{(}\PYG{n}{f}\PYG{p}{,} \PYG{n}{num\PYGZus{}tasks}\PYG{p}{,} \PYG{n}{boundary\PYGZus{}token}\PYG{p}{)}
+    \PYG{k}{with} \PYG{n}{multiprocessing}\PYG{o}{.}\PYG{n}{Pool}\PYG{p}{(}\PYG{n}{processes}\PYG{o}{=}\PYG{n}{num\PYGZus{}workers}\PYG{p}{)} \PYG{k}{as} \PYG{n}{pool}\PYG{p}{:}
+        \PYG{n}{tasks} \PYG{o}{=} \PYG{p}{[(}\PYG{n}{input\PYGZus{}path}\PYG{p}{,} \PYG{n}{start}\PYG{p}{,} \PYG{n}{end}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{)} \PYG{k}{for} \PYG{n}{start}\PYG{p}{,} \PYG{n}{end} \PYG{o+ow}{in} \PYG{n+nb}{zip}\PYG{p}{(}\PYG{n}{boundaries}\PYG{p}{[:}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{],} \PYG{n}{boundaries}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{:])]}
+        \PYG{n}{partial\PYGZus{}counts} \PYG{o}{=} \PYG{n}{pool}\PYG{o}{.}\PYG{n}{starmap}\PYG{p}{(}\PYG{n}{worker\PYGZus{}task}\PYG{p}{,} \PYG{n}{tasks}\PYG{p}{)}
+    \PYG{n}{global\PYGZus{}counts} \PYG{o}{=} \PYG{n}{Counter}\PYG{p}{()}
+    \PYG{k}{for} \PYG{n}{local\PYGZus{}count} \PYG{o+ow}{in} \PYG{n}{partial\PYGZus{}counts}\PYG{p}{:}
+        \PYG{n}{global\PYGZus{}counts}\PYG{o}{.}\PYG{n}{update}\PYG{p}{(}\PYG{n}{local\PYGZus{}count}\PYG{p}{)}
+    \PYG{k}{return} \PYG{n}{global\PYGZus{}counts}
+
+
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+\PYG{c+c1}{\PYGZsh{} 3. 核心大作业交付函数: train\PYGZus{}bpe}
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+
+\PYG{k}{def} \PYG{n+nf}{train\PYGZus{}bpe}\PYG{p}{(}\PYG{n}{input\PYGZus{}path}\PYG{p}{:} \PYG{n+nb}{str}\PYG{p}{,} \PYG{n}{vocab\PYGZus{}size}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{])} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n+nb}{tuple}\PYG{p}{[}\PYG{n+nb}{dict}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{,} \PYG{n+nb}{bytes}\PYG{p}{],} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{tuple}\PYG{p}{[}\PYG{n+nb}{bytes}\PYG{p}{,} \PYG{n+nb}{bytes}\PYG{p}{]]]:}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}开始预分词与频率统计 (Python 多进程)...\PYGZdq{}}\PYG{p}{)}
+    \PYG{n}{global\PYGZus{}counts} \PYG{o}{=} \PYG{n}{run\PYGZus{}parallel\PYGZus{}pretokenization}\PYG{p}{(}\PYG{n}{input\PYGZus{}path}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{)}
+
+    \PYG{n}{num\PYGZus{}merges} \PYG{o}{=} \PYG{n}{vocab\PYGZus{}size} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{256} \PYG{o}{\PYGZhy{}} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{)}
+    \PYG{k}{if} \PYG{n}{num\PYGZus{}merges} \PYG{o}{\PYGZlt{}} \PYG{l+m+mi}{0}\PYG{p}{:}
+        \PYG{k}{raise} \PYG{n+ne}{ValueError}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}vocab\PYGZus{}size is too small to fit base bytes and special tokens.\PYGZdq{}}\PYG{p}{)}
+
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}将数据移交 Rust 底层进行极速合并 (目标总词表大小: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{vocab\PYGZus{}size}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{)}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{)...\PYGZdq{}}\PYG{p}{)}
+    \PYG{c+c1}{\PYGZsh{} 🚀 核心优化：瞬间完成原本需要 55 分钟的计算！}
+    \PYG{n}{merges}\PYG{p}{,} \PYG{n}{vocab} \PYG{o}{=} \PYG{n}{fast\PYGZus{}bpe}\PYG{o}{.}\PYG{n}{train\PYGZus{}bpe\PYGZus{}rust}\PYG{p}{(}\PYG{n}{global\PYGZus{}counts}\PYG{p}{,} \PYG{n}{vocab\PYGZus{}size} \PYG{o}{\PYGZhy{}} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{))}
+
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}Rust 计算完成，添加 Special Tokens...\PYGZdq{}}\PYG{p}{)}
+    \PYG{c+c1}{\PYGZsh{} 将 Special Tokens 添加到最终词表末尾}
+    \PYG{n}{vocab\PYGZus{}idx} \PYG{o}{=} \PYG{l+m+mi}{256} \PYG{o}{+} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{merges}\PYG{p}{)}
+    \PYG{k}{for} \PYG{n}{st} \PYG{o+ow}{in} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{:}
+        \PYG{n}{vocab}\PYG{p}{[}\PYG{n}{vocab\PYGZus{}idx}\PYG{p}{]} \PYG{o}{=} \PYG{n}{st}\PYG{o}{.}\PYG{n}{encode}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}utf\PYGZhy{}8\PYGZdq{}}\PYG{p}{)}
+        \PYG{n}{vocab\PYGZus{}idx} \PYG{o}{+=} \PYG{l+m+mi}{1}
+
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}BPE 训练彻底完成！\PYGZdq{}}\PYG{p}{)}
+    \PYG{k}{return} \PYG{n}{vocab}\PYG{p}{,} \PYG{n}{merges}
+
+
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+\PYG{c+c1}{\PYGZsh{} 测试/执行入口}
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+\PYG{k}{if} \PYG{n+nv+vm}{\PYGZus{}\PYGZus{}name\PYGZus{}\PYGZus{}} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}\PYGZus{}\PYGZus{}main\PYGZus{}\PYGZus{}\PYGZdq{}}\PYG{p}{:}
+    
+    \PYG{n}{file\PYGZus{}path} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}/home/inferior/Projects/CS336/data/owt\PYGZus{}train.txt\PYGZdq{}}
+    \PYG{n}{target\PYGZus{}vocab\PYGZus{}size} \PYG{o}{=} \PYG{l+m+mi}{32000}
+    \PYG{n}{special\PYGZus{}tks} \PYG{o}{=} \PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}\PYGZlt{}|endoftext|\PYGZgt{}\PYGZdq{}}\PYG{p}{]}
+    
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}\PYGZhy{}\PYGZhy{}\PYGZhy{} 开始 BPE 训练任务 \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZdq{}}\PYG{p}{)}
+    \PYG{n}{start\PYGZus{}time} \PYG{o}{=} \PYG{n}{time}\PYG{o}{.}\PYG{n}{time}\PYG{p}{()}
+    
+    \PYG{n}{vocab}\PYG{p}{,} \PYG{n}{merges} \PYG{o}{=} \PYG{n}{train\PYGZus{}bpe}\PYG{p}{(}
+        \PYG{n}{input\PYGZus{}path}\PYG{o}{=}\PYG{n}{file\PYGZus{}path}\PYG{p}{,} 
+        \PYG{n}{vocab\PYGZus{}size}\PYG{o}{=}\PYG{n}{target\PYGZus{}vocab\PYGZus{}size}\PYG{p}{,} 
+        \PYG{n}{special\PYGZus{}tokens}\PYG{o}{=}\PYG{n}{special\PYGZus{}tks}
+    \PYG{p}{)}
+    
+    \PYG{n}{end\PYGZus{}time} \PYG{o}{=} \PYG{n}{time}\PYG{o}{.}\PYG{n}{time}\PYG{p}{()}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+se}{\PYGZbs{}n}\PYG{l+s+s2}{✅ 训练总耗时: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{end\PYGZus{}time}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{start\PYGZus{}time}\PYG{l+s+si}{:}\PYG{l+s+s2}{.2f}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{ 秒\PYGZdq{}}\PYG{p}{)}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}最终合并列表长度: }\PYG{l+s+si}{\PYGZob{}}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{merges}\PYG{p}{)}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}最终词表大小: }\PYG{l+s+si}{\PYGZob{}}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{vocab}\PYG{p}{)}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+    
+    \PYG{c+c1}{\PYGZsh{} \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}}
+    \PYG{c+c1}{\PYGZsh{} 序列化保存 (Serialization)}
+    \PYG{c+c1}{\PYGZsh{} \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}}
+    \PYG{n}{output\PYGZus{}dir} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}tokenizer\PYGZus{}outputs\PYGZdq{}}
+    \PYG{n}{os}\PYG{o}{.}\PYG{n}{makedirs}\PYG{p}{(}\PYG{n}{output\PYGZus{}dir}\PYG{p}{,} \PYG{n}{exist\PYGZus{}ok}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+    
+    \PYG{n}{vocab\PYGZus{}path} \PYG{o}{=} \PYG{n}{os}\PYG{o}{.}\PYG{n}{path}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{output\PYGZus{}dir}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}vocab.pkl\PYGZdq{}}\PYG{p}{)}
+    \PYG{n}{merges\PYGZus{}path} \PYG{o}{=} \PYG{n}{os}\PYG{o}{.}\PYG{n}{path}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{output\PYGZus{}dir}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}merges.pkl\PYGZdq{}}\PYG{p}{)}
+    
+    \PYG{k}{with} \PYG{n+nb}{open}\PYG{p}{(}\PYG{n}{vocab\PYGZus{}path}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}wb\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
+        \PYG{n}{pickle}\PYG{o}{.}\PYG{n}{dump}\PYG{p}{(}\PYG{n}{vocab}\PYG{p}{,} \PYG{n}{f}\PYG{p}{)}
+    
+    \PYG{k}{with} \PYG{n+nb}{open}\PYG{p}{(}\PYG{n}{merges\PYGZus{}path}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}wb\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
+        \PYG{n}{pickle}\PYG{o}{.}\PYG{n}{dump}\PYG{p}{(}\PYG{n}{merges}\PYG{p}{,} \PYG{n}{f}\PYG{p}{)}
+        
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}💾 序列化完成！文件已保存至: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{output\PYGZus{}dir}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{/\PYGZdq{}}\PYG{p}{)}
+    
+    \PYG{c+c1}{\PYGZsh{} \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}}
+    \PYG{c+c1}{\PYGZsh{} 分析：寻找最长的 Token (作业要求)}
+    \PYG{c+c1}{\PYGZsh{} \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}}
+    \PYG{n}{longest\PYGZus{}token\PYGZus{}id} \PYG{o}{=} \PYG{n+nb}{max}\PYG{p}{(}\PYG{n}{vocab}\PYG{p}{,} \PYG{n}{key}\PYG{o}{=}\PYG{k}{lambda} \PYG{n}{k}\PYG{p}{:} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{vocab}\PYG{p}{[}\PYG{n}{k}\PYG{p}{]))}
+    \PYG{n}{longest\PYGZus{}token\PYGZus{}bytes} \PYG{o}{=} \PYG{n}{vocab}\PYG{p}{[}\PYG{n}{longest\PYGZus{}token\PYGZus{}id}\PYG{p}{]}
+    
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+se}{\PYGZbs{}n}\PYG{l+s+s2}{🔍 词表分析:\PYGZdq{}}\PYG{p}{)}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}最长 Token 的 ID: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{longest\PYGZus{}token\PYGZus{}id}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}最长 Token 的字节长度: }\PYG{l+s+si}{\PYGZob{}}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{longest\PYGZus{}token\PYGZus{}bytes}\PYG{p}{)}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+    \PYG{k}{try}\PYG{p}{:}
+        \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}最长 Token 的文本内容: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{longest\PYGZus{}token\PYGZus{}bytes}\PYG{o}{.}\PYG{n}{decode}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}utf\PYGZhy{}8\PYGZsq{}}\PYG{p}{)}\PYG{l+s+si}{!r\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+    \PYG{k}{except} \PYG{n+ne}{UnicodeDecodeError}\PYG{p}{:}
+        \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}最长 Token (原始字节): }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{longest\PYGZus{}token\PYGZus{}bytes}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+se}{\PYGZbs{}n}\PYG{l+s+s2}{最初的 5 次 Merge:\PYGZdq{}}\PYG{p}{)}
+    \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{n+nb}{min}\PYG{p}{(}\PYG{l+m+mi}{5}\PYG{p}{,} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{merges}\PYG{p}{))):}
+        \PYG{n}{p1}\PYG{p}{,} \PYG{n}{p2} \PYG{o}{=} \PYG{n}{merges}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]}
+        \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}  }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{p1}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{ + }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{p2}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{ \PYGZhy{}\PYGZgt{} }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{p1}\PYG{+w}{ }\PYG{o}{+}\PYG{+w}{ }\PYG{n}{p2}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
+\end{Verbatim}

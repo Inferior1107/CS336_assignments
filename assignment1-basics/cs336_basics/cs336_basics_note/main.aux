@@ -5,10 +5,19 @@
 \@writefile{toc}{\contentsline {section}{\numberline {2}Byte-Pair Encoding (BPE) Tokenizer}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.1}The Unicode Standard}{2}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Unicode Encodings}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Subword Tokenization}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}BPE Tokenizer Training}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Vocabulary initialization}{3}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Pre-tokenization}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Subword Tokenization}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}BPE Tokenizer Training}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Vocabulary initialization}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Pre-tokenization}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Compute BPE merges}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Special tokens}{4}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Experimenting with BPE Tokenizer Training}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Parallelizing pre-tokenization}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Removing special tokens before pre-tokenization}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Optimizing the merging step}{5}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A}Complete Source Code}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Python BPE Trainer}{6}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.2}Fast BPE Implementation (Rust)}{10}{}\protected@file@percent }
 \gdef\minted@oldcachelist{,
   default.pygstyle,
   6CB8F1F5AAB96C69F61C63515EFF176C541C68F80C6A6F06151AFD63BAE50EBC.pygtex,
@@ -25,11 +34,7 @@
   33634D06EABB2069BBDB687B45573AA8541C68F80C6A6F06151AFD63BAE50EBC.pygtex,
   CAEC962C0746EAB0FA310AB131435E5C541C68F80C6A6F06151AFD63BAE50EBC.pygtex,
   75D707958EC645186268E7ED3C73CDE5377D2AA7CAC59F8F10B4B3E16FE511A1.pygtex,
-  B27B7C6FA16C50EB942E0F3EBB8060A7541C68F80C6A6F06151AFD63BAE50EBC.pygtex}
-\@writefile{toc}{\contentsline {paragraph}{Compute BPE merges}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Special tokens}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {2.5}Experimenting with BPE Tokenizer Training}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Parallelizing pre-tokenization}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Removing special tokens before pre-tokenization}{4}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Optimizing the merging step}{4}{}\protected@file@percent }
-\gdef \@abspage@last{4}
+  B27B7C6FA16C50EB942E0F3EBB8060A7541C68F80C6A6F06151AFD63BAE50EBC.pygtex,
+  5951D1E97F20541101962888942FAEC5EBE515C6F385C182F5FF25B384DF7596.pygtex,
+  9B865EC1280D92C0F16E6AC7A421423E627F0E119DCF38D86EA268CD744AB745.pygtex}
+\gdef \@abspage@last{12}

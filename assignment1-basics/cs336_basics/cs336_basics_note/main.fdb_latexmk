@@ -1,14 +1,20 @@
 # Fdb version 4
-["xdvipdfmx"] 1775392123.53286 "main.xdv" "main.pdf" "main" 1775392123.63594 0
-  "main.xdv" 1775392123.49434 82512 1b0b35b1755ad246a53ec5a04ed0fd00 "xelatex"
+["xdvipdfmx"] 1775491282.80339 "main.xdv" "main.pdf" "main" 1775491282.91875 0
+  "main.xdv" 1775491282.76618 269528 24969b1462f3fb247eb0c285275fa3b8 "xelatex"
   (generated)
   "main.pdf"
   (rewritten before read)
-["xelatex"] 1775392122.93279 "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" "main.xdv" "main" 1775392123.63495 0
+["xelatex"] 1775491282.08838 "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" "main.xdv" "main" 1775491282.91772 0
+  "../../fast_bpe/src/lib.rs" 1775485377.43349 4550 9b865ec1280d92c0f16e6ac7a421423e ""
+  "../test_function/bpe_trainer.py" 1775486362.62823 6887 5951d1e97f20541101962888942faec5 ""
   "/etc/texmf/web2c/texmf.cnf" 1775129653.52581 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" 1775392122.87635 8760 ff5cae2428578c2a6e146a7ae57a4edb ""
+  "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" 1775491281.24779 11190 5de29ae2ab31cdc01bd0b775b96a7737 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
+  "/usr/share/texlive/texmf-dist/fonts/tfm/public/amsfonts/cmextra/cmex7.tfm" 1246382020 1004 54797486969f23fa377b128694d548df ""
+  "/usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmmi5.tfm" 1136768653 1508 3b32edd0d68f6498a5a375e78f9edc5e ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmr10.tfm" 1136768653 1296 45809c5a464d5f32c8f98ba97c1bb47f ""
+  "/usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmr5.tfm" 1136768653 1220 ad296dff3c8796c18053ab7b9f86ad7c ""
+  "/usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmsy5.tfm" 1136768653 1112 14d5d5f6bd3c949edecb5b872f295553 ""
   "/usr/share/texlive/texmf-dist/tex/generic/catchfile/catchfile.sty" 1576016007 8622 63834878edeb14dd71d58d8f22bc3e06 ""
   "/usr/share/texlive/texmf-dist/tex/generic/etexcmds/etexcmds.sty" 1576625273 7734 b98cbb34c81f667027c1e3ebdbfce34b ""
   "/usr/share/texlive/texmf-dist/tex/generic/iftex/ifluatex.sty" 1572645307 492 1994775aa15b0d1289725a0b1bbc2d4c ""
@@ -178,19 +184,21 @@
   "_minted-main/016096F266E7677DC78B91F05AB42B90541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.78895 513 28209708d99fb1fd6adf9ebbed4033a4 ""
   "_minted-main/33634D06EABB2069BBDB687B45573AA8541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.91784 153 fb66fc34cfe5c29c3312f54cdea2d838 ""
   "_minted-main/4972DF3585246401EB12B70D6448A511541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.85276 165 8ba3ff2fdc104d127ce5fcc00fa8ac09 ""
+  "_minted-main/5951D1E97F20541101962888942FAEC5EBE515C6F385C182F5FF25B384DF7596.pygtex" 1775491281.88695 21933 5ebf44bac9bd6ebfc999acc5d47d91ce ""
   "_minted-main/595A2DC0AAC63B2C2907B8C595CF6BBC541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.67717 126 675eda7bac64d88df410f598d28de334 ""
   "_minted-main/62606FAE41FE684EADA93483633EBE55541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.64537 80 2e029641cb182a327573dba0c9b71c84 ""
   "_minted-main/6B2120B6F6A6C93898CD4E9745AE7DF7541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.88522 84 60fdf9278f22cfc85bbfbd31bd559116 ""
   "_minted-main/6CB8F1F5AAB96C69F61C63515EFF176C541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.61012 80 6ae66876142a4a8c484d5cddb6301b14 ""
   "_minted-main/75D707958EC645186268E7ED3C73CDE5377D2AA7CAC59F8F10B4B3E16FE511A1.pygtex" 1775391167.98776 1141 8a685d452d2d81b03286fed9a4681f9c ""
   "_minted-main/98038ECDB4514CF1746D159AE6E2D67A377D2AA7CAC59F8F10B4B3E16FE511A1.pygtex" 1775391167.82209 347 a0d14b3e5a083a0916b61344d143f6b8 ""
+  "_minted-main/9B865EC1280D92C0F16E6AC7A421423E627F0E119DCF38D86EA268CD744AB745.pygtex" 1775491281.98718 18798 d511b27dbb882a6ef960c37f13d4eca5 ""
   "_minted-main/B27B7C6FA16C50EB942E0F3EBB8060A7541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391168.02707 78 e2facfd2af5b69adcb9903a31cfcb350 ""
   "_minted-main/CAEC962C0746EAB0FA310AB131435E5C541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.95027 72 cb8b7971a89e720cff44deebf71b8a80 ""
   "_minted-main/F0BD6975D9FC7A03EE0AAE2C2B0BE4FD377D2AA7CAC59F8F10B4B3E16FE511A1.pygtex" 1775391704.42825 838 dc670ccf116812727e1f887da37c156f ""
   "_minted-main/F96C205E418EB88D26FFA4689D584B05541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.70847 120 ff2ea85d9ee2f5c11135f9dd91a4f1c1 ""
   "_minted-main/default.pygstyle" 1775391167.57776 6428 74aba51736a5bc6590f8f7dd413c6f27 ""
-  "main.aux" 1775392123.49248 2911 44bc32dffeb1ae4bf0fd5f15afb87a01 "xelatex"
-  "main.tex" 1775392122.87635 8760 ff5cae2428578c2a6e146a7ae57a4edb ""
+  "main.aux" 1775491282.76418 3405 9fae110a20c34c5bcee72af2973eba6e "xelatex"
+  "main.tex" 1775491281.24779 11190 5de29ae2ab31cdc01bd0b775b96a7737 ""
   (generated)
   "main.aux"
   "main.log"

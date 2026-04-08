@@ -15,7 +15,7 @@ from collections import defaultdict
 import pickle
 
 from cs336_basics.test_function.bpe_trainer import train_bpe
-
+from cs336_basics.test_function.tokenizer import Tokenizer
 
 def run_linear(
     d_in: int,
@@ -566,7 +566,7 @@ def get_tokenizer(
     Returns:
         A BPE tokenizer that uses the provided vocab, merges, and special tokens.
     """
-    raise NotImplementedError
+    return Tokenizer(vocab=vocab, merges=merges, special_tokens=special_tokens)
 
 
 def run_train_bpe(

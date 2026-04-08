@@ -68,6 +68,29 @@
     bottom=10pt
 }
 
+\newtcolorbox{ideabox}[1]{
+    enhanced,
+    sharp corners,
+    boxrule=3pt,               
+    colframe=yellow,             
+    colback=white,
+    colbacktitle=white,
+    coltitle=black,
+    fonttitle=\bfseries,
+    title={Insights: #1}, % 固定前缀，#1 接收自定义标题
+    titlerule=0pt,
+    overlay={
+        % 调整了 xshift=10pt，使其与下方正文的 left=10pt 和 right=10pt 完美对齐
+        \draw[black, line width=0.4pt] ([xshift=10pt, yshift=2pt]title.south west) -- ([xshift=-10pt, yshift=2pt]title.south east);
+    },
+    toptitle=8pt,
+    bottomtitle=6pt,
+    top=8pt,
+    left=10pt,
+    right=10pt,
+    bottom=10pt
+}
+
 \begin{document}
 
 \section{Assignment Overview}
@@ -232,9 +255,35 @@ Use regular expressions to split the sentence into independent punctuation marks
 
 \end{problembox}
 
+\begin{ideabox}{BPE Tokenizer Training}
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=0.8em, parsep=0pt]
+        \item \textbf{Python plus Rust}: Python is used for rapid prototyping, while Rust handles the actual deployment of the product.
+
+        \item \textbf{Glitch Tokens}: Due to insufficiently strict data cleaning, some meaningless words—namely \textbf{Mojibake}—may appear during the BPE training process. Moreover, because of BPE's \textbf{greedy, unsupervised, and non-semantic nature}, a large number of such meaningless word merges occur, turning them into abnormally long and nonsensical words.
+
+        \item \textbf{Vocabulary Bloat (Dead Tokens)}: Because BPE is incremental and never removes merges, the intermediate products of long words permanently occupy the vocabulary, leading to wasted model parameters and tokenization fragmentation. In industry, there are three approaches to address this issue: First, absolutely aggressive data cleaning; second, stricter regex filtering. Both of these are common methods for limiting glitch tokens. The third approach is to switch to the \textbf{Unigram} algorithm, which is frequently used by Google-family models (such as T5 and some Llama variants).
+
+        \item \textbf{Unigram}: Unigram works by "subtraction": it first initializes an extremely large vocabulary (e.g., 100,000 words) and \textbf{then calculates how much the overall corpus compression rate would be affected if a given word were removed}. Those useless intermediate composite words are directly eliminated and discarded during training.
+    \end{itemize}
+
+\end{ideabox}
+
 \newpage
 \appendix
 \section{Complete Source Code}
+
+\subsection{Fast BPE Implementation (Rust)}
+% 引入 Rust 代码
+\inputminted[
+    linenos,
+    breaklines=true,
+    fontsize=\footnotesize,
+    frame=lines,
+    framesep=2mm
+]{rust}{../../fast_bpe/src/lib.rs}
+
+\newpage
 
 \subsection{Python BPE Trainer}
 % 引入 Python 代码
@@ -246,16 +295,5 @@ Use regular expressions to split the sentence into independent punctuation marks
     framesep=2mm
 ]{python}{../test_function/bpe_trainer.py}
 
-\newpage
-
-\subsection{Fast BPE Implementation (Rust)}
-% 引入 Rust 代码
-\inputminted[
-    linenos,
-    breaklines=true,
-    fontsize=\footnotesize,
-    frame=lines,
-    framesep=2mm
-]{rust}{../../fast_bpe/src/lib.rs}
 
 \end{document}

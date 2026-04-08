@@ -6,7 +6,6 @@ import multiprocessing
 from typing import BinaryIO
 from collections import Counter
 
-# 🚀 导入你刚刚用 Rust 编译的终极加速模块！
 import fast_bpe
 
 # ==========================================
@@ -98,12 +97,12 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
     if num_merges < 0:
         raise ValueError("vocab_size is too small to fit base bytes and special tokens.")
 
-    print(f"将数据移交 Rust 底层进行极速合并 (目标总词表大小: {vocab_size - len(special_tokens)})...")
-    # 🚀 核心优化：瞬间完成原本需要 55 分钟的计算！
+    print(f"将数据移交 Rust 底层进行合并 (目标总词表大小: {vocab_size - len(special_tokens)})...")
+    
     merges, vocab = fast_bpe.train_bpe_rust(global_counts, vocab_size - len(special_tokens))
 
     print("Rust 计算完成，添加 Special Tokens...")
-    # 将 Special Tokens 添加到最终词表末尾
+    
     vocab_idx = 256 + len(merges)
     for st in special_tokens:
         vocab[vocab_idx] = st.encode("utf-8")
@@ -118,8 +117,10 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
 # ==========================================
 if __name__ == "__main__":
     
-    file_path = "/home/inferior/Projects/CS336/data/owt_train.txt"
-    target_vocab_size = 32000
+    # file_path = "/home/inferior/Projects/CS336/data/owt_train.txt"
+    file_path = "/home/inferior/Projects/CS336/data/TinyStoriesV2-GPT4-train.txt"
+    # target_vocab_size = 32000
+    target_vocab_size = 10000
     special_tks = ["<|endoftext|>"]
     
     print("--- 开始 BPE 训练任务 ---")

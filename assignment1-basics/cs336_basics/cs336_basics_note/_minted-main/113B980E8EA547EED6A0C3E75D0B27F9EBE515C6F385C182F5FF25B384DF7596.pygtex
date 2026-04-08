@@ -7,7 +7,6 @@
 \PYG{k+kn}{from} \PYG{n+nn}{typing} \PYG{k+kn}{import} \PYG{n}{BinaryIO}
 \PYG{k+kn}{from} \PYG{n+nn}{collections} \PYG{k+kn}{import} \PYG{n}{Counter}
 
-\PYG{c+c1}{\PYGZsh{} 🚀 导入你刚刚用 Rust 编译的终极加速模块！}
 \PYG{k+kn}{import} \PYG{n+nn}{fast\PYGZus{}bpe}
 
 \PYG{c+c1}{\PYGZsh{} ==========================================}
@@ -99,12 +98,12 @@
     \PYG{k}{if} \PYG{n}{num\PYGZus{}merges} \PYG{o}{\PYGZlt{}} \PYG{l+m+mi}{0}\PYG{p}{:}
         \PYG{k}{raise} \PYG{n+ne}{ValueError}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}vocab\PYGZus{}size is too small to fit base bytes and special tokens.\PYGZdq{}}\PYG{p}{)}
 
-    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}将数据移交 Rust 底层进行极速合并 (目标总词表大小: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{vocab\PYGZus{}size}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{)}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{)...\PYGZdq{}}\PYG{p}{)}
-    \PYG{c+c1}{\PYGZsh{} 🚀 核心优化：瞬间完成原本需要 55 分钟的计算！}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}将数据移交 Rust 底层进行合并 (目标总词表大小: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{vocab\PYGZus{}size}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{)}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{)...\PYGZdq{}}\PYG{p}{)}
+    
     \PYG{n}{merges}\PYG{p}{,} \PYG{n}{vocab} \PYG{o}{=} \PYG{n}{fast\PYGZus{}bpe}\PYG{o}{.}\PYG{n}{train\PYGZus{}bpe\PYGZus{}rust}\PYG{p}{(}\PYG{n}{global\PYGZus{}counts}\PYG{p}{,} \PYG{n}{vocab\PYGZus{}size} \PYG{o}{\PYGZhy{}} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{))}
 
     \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}Rust 计算完成，添加 Special Tokens...\PYGZdq{}}\PYG{p}{)}
-    \PYG{c+c1}{\PYGZsh{} 将 Special Tokens 添加到最终词表末尾}
+    
     \PYG{n}{vocab\PYGZus{}idx} \PYG{o}{=} \PYG{l+m+mi}{256} \PYG{o}{+} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{merges}\PYG{p}{)}
     \PYG{k}{for} \PYG{n}{st} \PYG{o+ow}{in} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{:}
         \PYG{n}{vocab}\PYG{p}{[}\PYG{n}{vocab\PYGZus{}idx}\PYG{p}{]} \PYG{o}{=} \PYG{n}{st}\PYG{o}{.}\PYG{n}{encode}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}utf\PYGZhy{}8\PYGZdq{}}\PYG{p}{)}
@@ -119,8 +118,10 @@
 \PYG{c+c1}{\PYGZsh{} ==========================================}
 \PYG{k}{if} \PYG{n+nv+vm}{\PYGZus{}\PYGZus{}name\PYGZus{}\PYGZus{}} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}\PYGZus{}\PYGZus{}main\PYGZus{}\PYGZus{}\PYGZdq{}}\PYG{p}{:}
     
-    \PYG{n}{file\PYGZus{}path} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}/home/inferior/Projects/CS336/data/owt\PYGZus{}train.txt\PYGZdq{}}
-    \PYG{n}{target\PYGZus{}vocab\PYGZus{}size} \PYG{o}{=} \PYG{l+m+mi}{32000}
+    \PYG{c+c1}{\PYGZsh{} file\PYGZus{}path = \PYGZdq{}/home/inferior/Projects/CS336/data/owt\PYGZus{}train.txt\PYGZdq{}}
+    \PYG{n}{file\PYGZus{}path} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}/home/inferior/Projects/CS336/data/TinyStoriesV2\PYGZhy{}GPT4\PYGZhy{}train.txt\PYGZdq{}}
+    \PYG{c+c1}{\PYGZsh{} target\PYGZus{}vocab\PYGZus{}size = 32000}
+    \PYG{n}{target\PYGZus{}vocab\PYGZus{}size} \PYG{o}{=} \PYG{l+m+mi}{10000}
     \PYG{n}{special\PYGZus{}tks} \PYG{o}{=} \PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}\PYGZlt{}|endoftext|\PYGZgt{}\PYGZdq{}}\PYG{p}{]}
     
     \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}\PYGZhy{}\PYGZhy{}\PYGZhy{} 开始 BPE 训练任务 \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZdq{}}\PYG{p}{)}

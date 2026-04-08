@@ -1,5 +1,4 @@
 use pyo3::prelude::*;
-// 🚀 修改点 1：回归标准库的 HashMap 和 HashSet，PyO3 能完美识别它们
 use std::collections::{HashMap, HashSet, BinaryHeap};
 use std::cmp::Ordering;
 
@@ -129,7 +128,6 @@ fn train_bpe_rust(
     Ok((merges, final_vocab))
 }
 
-// 🚀 修改点 2：适配最新版 PyO3 的 Bound API 签名
 #[pymodule]
 fn fast_bpe(m: &Bound<'_, pyo3::types::PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(train_bpe_rust, m)?)?;

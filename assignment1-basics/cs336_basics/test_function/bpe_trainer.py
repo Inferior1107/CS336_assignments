@@ -117,10 +117,10 @@ def train_bpe(input_path: str, vocab_size: int, special_tokens: list[str]) -> tu
 # ==========================================
 if __name__ == "__main__":
     
-    # file_path = "/home/inferior/Projects/CS336/data/owt_train.txt"
-    file_path = "/home/inferior/Projects/CS336/data/TinyStoriesV2-GPT4-train.txt"
-    # target_vocab_size = 32000
-    target_vocab_size = 10000
+    file_path = "/home/inferior/Projects/CS336/data/owt_train.txt"
+    # file_path = "/home/inferior/Projects/CS336/data/TinyStoriesV2-GPT4-train.txt"
+    target_vocab_size = 32000
+    # target_vocab_size = 10000
     special_tks = ["<|endoftext|>"]
     
     print("--- 开始 BPE 训练任务 ---")

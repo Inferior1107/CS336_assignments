@@ -7,6 +7,8 @@
   }
 }
 
+\usepackage{microtype}
+\usepackage{lmodern}
 \usepackage{enumitem}
 \usepackage[a4paper, margin=1in]{geometry}
 \usepackage{xcolor} 
@@ -268,6 +270,64 @@ Use regular expressions to split the sentence into independent punctuation marks
     \end{itemize}
 
 \end{ideabox}
+
+\begin{problembox}{train\_bpe\_tinystories}{BPE Training on TinyStories \hfill (2 points)}
+
+    \begin{enumerate}[label=(\alph*), itemsep=1em, topsep=0pt]
+
+        \item Train a byte-level BPE tokenizer on the TinyStories dataset, using a maximum vocabulary size of 10,000. Make sure to add the TinyStories \texttt{\textless|endoftext|\textgreater} special token to the vocabulary. Serialize the resulting vocabulary and merges to disk for further inspection. How many hours and memory did training take? What is the longest token in the vocabulary? Does it make sense?
+
+              \textbf{Resource requirements:} $\le$ 30 minutes (no GPUs), $\le$ 30GB RAM \\
+              \textbf{Resource used:} 10.78 seconds, 2.6GB RAM \\
+              \textbf{Longest token:} ' disappointment'
+
+        \item Profile your code. What part of the tokenizer training process takes the most time?
+
+              \textbf{Answer:} \mintinline{python}{process_chunk_with_special_tokens} takes up the vast majority of the time.
+
+    \end{enumerate}
+
+\end{problembox}
+
+\begin{problembox}{train\_bpe\_tinystories}{BPE Training on TinyStories \hfill (2 points)}
+
+    \begin{enumerate}[label=(\alph*), itemsep=1em, topsep=0pt]
+
+        \item Train a byte-level BPE tokenizer on the TinyStories dataset, using a maximum vocabulary size of 10,000. Make sure to add the TinyStories \texttt{\textless|endoftext|\textgreater} special token to the vocabulary. Serialize the resulting vocabulary and merges to disk for further inspection. How many hours and memory did training take? What is the longest token in the vocabulary? Does it make sense?
+
+              \textbf{Resource requirements:} $\le$ 30 minutes (no GPUs), $\le$ 30GB RAM \\
+              \textbf{Resource used:} 10.78 seconds, 2.6GB RAM \\
+              \textbf{Longest token:} ' disappointment'
+
+        \item Profile your code. What part of the tokenizer training process takes the most time?
+
+              \textbf{Answer:} \mintinline{python}{process_chunk_with_special_tokens} takes up the vast majority of the time.
+
+    \end{enumerate}
+
+\end{problembox}
+
+\begin{problembox}{train\_bpe\_expts\_owt}{BPE Training on OpenWebText \hfill (2 points)}
+
+    \begin{enumerate}[label=(\alph*), itemsep=1em, topsep=0pt]
+
+        \item Train a byte-level BPE tokenizer on the OpenWebText dataset, using a maximum vocabulary size of 32,000. Serialize the resulting vocabulary and merges to disk for further inspection. What is the longest token in the vocabulary? Does it make sense?
+
+              \textbf{Resource requirements:} $\le$ 12 hours (no GPUs), $\le$ 100GB RAM \\
+              \textbf{Resource used:} 6 minutes, 7.0GB RAM \\
+              \textbf{Longest token:} '----------------------------------------------------------------'
+
+        \item Compare and contrast the tokenizer that you get training on TinyStories versus OpenWebText.
+
+              \textbf{Answer:} Because TinyStories has an extremely limited vocabulary, a 10k vocab size forces the BPE tokenizer to over-merge, creating tokens that represent entire multi-word phrases. In contrast, OpenWebText's diverse internet text requires the BPE algorithm to rely heavily on subwords (like prefixes and suffixes) to represent its massive vocabulary within a 32k limit, resulting in shorter, more fragmented tokens for rare words.
+
+    \end{enumerate}
+
+\end{problembox}
+
+\subsection{BPE Tokenizer: Encoding and Decoding}
+
+\subsubsection{Encoding text}
 
 \newpage
 \appendix

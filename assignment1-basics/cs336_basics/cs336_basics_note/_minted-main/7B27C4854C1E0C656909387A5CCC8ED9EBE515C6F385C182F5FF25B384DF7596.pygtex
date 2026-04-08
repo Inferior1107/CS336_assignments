@@ -118,10 +118,10 @@
 \PYG{c+c1}{\PYGZsh{} ==========================================}
 \PYG{k}{if} \PYG{n+nv+vm}{\PYGZus{}\PYGZus{}name\PYGZus{}\PYGZus{}} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}\PYGZus{}\PYGZus{}main\PYGZus{}\PYGZus{}\PYGZdq{}}\PYG{p}{:}
     
-    \PYG{c+c1}{\PYGZsh{} file\PYGZus{}path = \PYGZdq{}/home/inferior/Projects/CS336/data/owt\PYGZus{}train.txt\PYGZdq{}}
-    \PYG{n}{file\PYGZus{}path} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}/home/inferior/Projects/CS336/data/TinyStoriesV2\PYGZhy{}GPT4\PYGZhy{}train.txt\PYGZdq{}}
-    \PYG{c+c1}{\PYGZsh{} target\PYGZus{}vocab\PYGZus{}size = 32000}
-    \PYG{n}{target\PYGZus{}vocab\PYGZus{}size} \PYG{o}{=} \PYG{l+m+mi}{10000}
+    \PYG{n}{file\PYGZus{}path} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}/home/inferior/Projects/CS336/data/owt\PYGZus{}train.txt\PYGZdq{}}
+    \PYG{c+c1}{\PYGZsh{} file\PYGZus{}path = \PYGZdq{}/home/inferior/Projects/CS336/data/TinyStoriesV2\PYGZhy{}GPT4\PYGZhy{}train.txt\PYGZdq{}}
+    \PYG{n}{target\PYGZus{}vocab\PYGZus{}size} \PYG{o}{=} \PYG{l+m+mi}{32000}
+    \PYG{c+c1}{\PYGZsh{} target\PYGZus{}vocab\PYGZus{}size = 10000}
     \PYG{n}{special\PYGZus{}tks} \PYG{o}{=} \PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}\PYGZlt{}|endoftext|\PYGZgt{}\PYGZdq{}}\PYG{p}{]}
     
     \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}\PYGZhy{}\PYGZhy{}\PYGZhy{} 开始 BPE 训练任务 \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZdq{}}\PYG{p}{)}

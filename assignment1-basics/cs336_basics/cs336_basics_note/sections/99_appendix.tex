@@ -1,0 +1,48 @@
+\appendix
+\section{Complete Source Code}
+
+\subsection{Fast BPE Implementation (Rust)}
+% 引入 Rust 代码
+\inputminted[
+    linenos,
+    breaklines=true,
+    fontsize=\footnotesize,
+    frame=lines,
+    framesep=2mm
+]{rust}{../../fast_bpe/src/lib.rs}
+
+\newpage
+
+\subsection{Python BPE Trainer}
+% 引入 Python 代码
+\inputminted[
+    linenos,               % 显示行号
+    breaklines=true,       % 自动换行
+    fontsize=\footnotesize,% 缩小字号，避免代码占用过多页数
+    frame=lines,           % 上下加边框线
+    framesep=2mm
+]{python}{../test_function/bpe_trainer.py}
+
+\newpage
+
+\subsection{Tokenizer}
+% 引入 Python 代码
+\inputminted[
+    linenos,               % 显示行号
+    breaklines=true,       % 自动换行
+    fontsize=\footnotesize,% 缩小字号，避免代码占用过多页数
+    frame=lines,           % 上下加边框线
+    framesep=2mm
+]{python}{../test_function/tokenizer.py}
+
+\newpage
+
+\subsection{Adapters}
+% 引入 Python 代码
+\inputminted[
+    linenos,               % 显示行号
+    breaklines=true,       % 自动换行
+    fontsize=\footnotesize,% 缩小字号，避免代码占用过多页数
+    frame=lines,           % 上下加边框线
+    framesep=2mm
+]{python}{../../tests/adapters.py}

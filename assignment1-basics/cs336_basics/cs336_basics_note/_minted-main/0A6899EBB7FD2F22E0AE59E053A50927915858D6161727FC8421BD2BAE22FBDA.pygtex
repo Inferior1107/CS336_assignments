@@ -1,0 +1,149 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{import} \PYG{n+nn}{pickle}
+\PYG{k+kn}{import} \PYG{n+nn}{regex} \PYG{k}{as} \PYG{n+nn}{re}
+\PYG{k+kn}{from} \PYG{n+nn}{typing} \PYG{k+kn}{import} \PYG{n}{Iterable}\PYG{p}{,} \PYG{n}{Iterator}
+
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+\PYG{c+c1}{\PYGZsh{} 1. 全局配置与正则定义}
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+\PYG{n}{PATTERN} \PYG{o}{=} \PYG{l+s+sa}{r}\PYG{l+s+s2}{\PYGZdq{}\PYGZdq{}\PYGZdq{}\PYGZsq{}(?:[sdmt]|ll|ve|re)| ?\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}L\PYGZcb{}}\PYG{l+s+s2}{+| ?\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}N\PYGZcb{}}\PYG{l+s+s2}{+| ?[\PYGZca{}\PYGZbs{}s\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}L\PYGZcb{}}\PYG{l+s+s2}{\PYGZbs{}p}\PYG{l+s+si}{\PYGZob{}N\PYGZcb{}}\PYG{l+s+s2}{]+|\PYGZbs{}s+(?!\PYGZbs{}S)|\PYGZbs{}s+\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{n}{PRETOKEN\PYGZus{}REGEX} \PYG{o}{=} \PYG{n}{re}\PYG{o}{.}\PYG{n}{compile}\PYG{p}{(}\PYG{n}{PATTERN}\PYG{p}{)}
+
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+\PYG{c+c1}{\PYGZsh{} 2. Tokenizer 核心类}
+\PYG{c+c1}{\PYGZsh{} ==========================================}
+\PYG{k}{class} \PYG{n+nc}{Tokenizer}\PYG{p}{:}
+    \PYG{k}{def} \PYG{n+nf+fm}{\PYGZus{}\PYGZus{}init\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{vocab}\PYG{p}{:} \PYG{n+nb}{dict}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{,} \PYG{n+nb}{bytes}\PYG{p}{],} \PYG{n}{merges}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{tuple}\PYG{p}{[}\PYG{n+nb}{bytes}\PYG{p}{,} \PYG{n+nb}{bytes}\PYG{p}{]],} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{]} \PYG{o}{|} \PYG{k+kc}{None} \PYG{o}{=} \PYG{k+kc}{None}\PYG{p}{):}
+\PYG{+w}{        }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{        初始化 Tokenizer，建立查找索引并处理特殊 Token。}
+\PYG{l+s+sd}{        \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{vocab} \PYG{o}{=} \PYG{n}{vocab}\PYG{o}{.}\PYG{n}{copy}\PYG{p}{()}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{merges} \PYG{o}{=} \PYG{n}{merges}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{special\PYGZus{}tokens} \PYG{o}{=} \PYG{n}{special\PYGZus{}tokens} \PYG{o+ow}{or} \PYG{p}{[]}
+        
+        \PYG{c+c1}{\PYGZsh{} 建立反向查找字典，用于快速获取 token 对应的 ID}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{token\PYGZus{}to\PYGZus{}id} \PYG{o}{=} \PYG{p}{\PYGZob{}}\PYG{n}{v}\PYG{p}{:} \PYG{n}{k} \PYG{k}{for} \PYG{n}{k}\PYG{p}{,} \PYG{n}{v} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{vocab}\PYG{o}{.}\PYG{n}{items}\PYG{p}{()\PYGZcb{}}
+        
+        \PYG{c+c1}{\PYGZsh{} 将 merges 列表转化为 \PYGZob{}pair: rank\PYGZcb{} 字典，以 O(1) 的时间复杂度获取合并优先级}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{merge\PYGZus{}ranks} \PYG{o}{=} \PYG{p}{\PYGZob{}}\PYG{n}{pair}\PYG{p}{:} \PYG{n}{i} \PYG{k}{for} \PYG{n}{i}\PYG{p}{,} \PYG{n}{pair} \PYG{o+ow}{in} \PYG{n+nb}{enumerate}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{merges}\PYG{p}{)\PYGZcb{}}
+        
+        \PYG{c+c1}{\PYGZsh{} 动态处理传入的 special\PYGZus{}tokens：如果不在词表中，则追加到末尾}
+        \PYG{n}{next\PYGZus{}id} \PYG{o}{=} \PYG{n+nb}{max}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{vocab}\PYG{o}{.}\PYG{n}{keys}\PYG{p}{())} \PYG{o}{+} \PYG{l+m+mi}{1} \PYG{k}{if} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{vocab} \PYG{k}{else} \PYG{l+m+mi}{0}
+        \PYG{k}{for} \PYG{n}{st} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{:}
+            \PYG{n}{st\PYGZus{}bytes} \PYG{o}{=} \PYG{n}{st}\PYG{o}{.}\PYG{n}{encode}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}utf\PYGZhy{}8\PYGZdq{}}\PYG{p}{)}
+            \PYG{k}{if} \PYG{n}{st\PYGZus{}bytes} \PYG{o+ow}{not} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{token\PYGZus{}to\PYGZus{}id}\PYG{p}{:}
+                \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{vocab}\PYG{p}{[}\PYG{n}{next\PYGZus{}id}\PYG{p}{]} \PYG{o}{=} \PYG{n}{st\PYGZus{}bytes}
+                \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{token\PYGZus{}to\PYGZus{}id}\PYG{p}{[}\PYG{n}{st\PYGZus{}bytes}\PYG{p}{]} \PYG{o}{=} \PYG{n}{next\PYGZus{}id}
+                \PYG{n}{next\PYGZus{}id} \PYG{o}{+=} \PYG{l+m+mi}{1}
+
+        \PYG{c+c1}{\PYGZsh{} 编译用于切分特殊 Token 的正则表达式}
+        \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{st\PYGZus{}pattern} \PYG{o}{=} \PYG{k+kc}{None}
+        \PYG{k}{if} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{:}
+            \PYG{c+c1}{\PYGZsh{} 使用捕获组 (...)，这样 re.split 时能保留特殊 token 在列表中}
+            \PYG{n}{sorted\PYGZus{}st} \PYG{o}{=} \PYG{n+nb}{sorted}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{,} \PYG{n}{key}\PYG{o}{=}\PYG{n+nb}{len}\PYG{p}{,} \PYG{n}{reverse}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+            \PYG{n}{pattern\PYGZus{}str} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}|\PYGZdq{}}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n+nb}{map}\PYG{p}{(}\PYG{n}{re}\PYG{o}{.}\PYG{n}{escape}\PYG{p}{,} \PYG{n}{sorted\PYGZus{}st}\PYG{p}{))}
+            \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{st\PYGZus{}pattern} \PYG{o}{=} \PYG{n}{re}\PYG{o}{.}\PYG{n}{compile}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}(}\PYG{l+s+si}{\PYGZob{}}\PYG{n}{pattern\PYGZus{}str}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{)\PYGZdq{}}\PYG{p}{)}
+
+    \PYG{n+nd}{@classmethod}
+    \PYG{k}{def} \PYG{n+nf}{from\PYGZus{}files}\PYG{p}{(}\PYG{n+nb+bp}{cls}\PYG{p}{,} \PYG{n}{vocab\PYGZus{}filepath}\PYG{p}{:} \PYG{n+nb}{str}\PYG{p}{,} \PYG{n}{merges\PYGZus{}filepath}\PYG{p}{:} \PYG{n+nb}{str}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{]} \PYG{o}{|} \PYG{k+kc}{None} \PYG{o}{=} \PYG{k+kc}{None}\PYG{p}{):}
+\PYG{+w}{        }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{        从序列化的 pickle 文件中加载 vocab 和 merges 并实例化 Tokenizer。}
+\PYG{l+s+sd}{        \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+        \PYG{k}{with} \PYG{n+nb}{open}\PYG{p}{(}\PYG{n}{vocab\PYGZus{}filepath}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}rb\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
+            \PYG{n}{vocab} \PYG{o}{=} \PYG{n}{pickle}\PYG{o}{.}\PYG{n}{load}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}
+        \PYG{k}{with} \PYG{n+nb}{open}\PYG{p}{(}\PYG{n}{merges\PYGZus{}filepath}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}rb\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
+            \PYG{n}{merges} \PYG{o}{=} \PYG{n}{pickle}\PYG{o}{.}\PYG{n}{load}\PYG{p}{(}\PYG{n}{f}\PYG{p}{)}
+            
+        \PYG{k}{return} \PYG{n+nb+bp}{cls}\PYG{p}{(}\PYG{n}{vocab}\PYG{p}{,} \PYG{n}{merges}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{p}{)}
+
+    \PYG{k}{def} \PYG{n+nf}{\PYGZus{}bpe\PYGZus{}encode\PYGZus{}chunk}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{chunk\PYGZus{}text}\PYG{p}{:} \PYG{n+nb}{str}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{]:}
+\PYG{+w}{        }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{        内部辅助函数：对单个正则切割后的纯文本 pre\PYGZhy{}token 进行 BPE 合并操作。}
+\PYG{l+s+sd}{        \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+        \PYG{c+c1}{\PYGZsh{} 将字符串打散成单字节列表}
+        \PYG{n}{b\PYGZus{}list} \PYG{o}{=} \PYG{p}{[}\PYG{n+nb}{bytes}\PYG{p}{([}\PYG{n}{b}\PYG{p}{])} \PYG{k}{for} \PYG{n}{b} \PYG{o+ow}{in} \PYG{n}{chunk\PYGZus{}text}\PYG{o}{.}\PYG{n}{encode}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}utf\PYGZhy{}8\PYGZdq{}}\PYG{p}{)]}
+        
+        \PYG{c+c1}{\PYGZsh{} 如果长度为1，直接返回（基础256字节必然在词表中）}
+        \PYG{k}{if} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{b\PYGZus{}list}\PYG{p}{)} \PYG{o}{\PYGZlt{}=} \PYG{l+m+mi}{1}\PYG{p}{:}
+            \PYG{k}{return} \PYG{p}{[}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{token\PYGZus{}to\PYGZus{}id}\PYG{p}{[}\PYG{n}{b}\PYG{p}{]} \PYG{k}{for} \PYG{n}{b} \PYG{o+ow}{in} \PYG{n}{b\PYGZus{}list}\PYG{p}{]}
+
+        \PYG{k}{while} \PYG{k+kc}{True}\PYG{p}{:}
+            \PYG{c+c1}{\PYGZsh{} 找到当前序列中，在 merges 中优先级最高（rank 最小）的相邻字节对}
+            \PYG{n}{min\PYGZus{}rank} \PYG{o}{=} \PYG{n+nb}{float}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}inf\PYGZsq{}}\PYG{p}{)}
+            \PYG{n}{best\PYGZus{}pair} \PYG{o}{=} \PYG{k+kc}{None}
+            
+            \PYG{k}{for} \PYG{n}{i} \PYG{o+ow}{in} \PYG{n+nb}{range}\PYG{p}{(}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{b\PYGZus{}list}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1}\PYG{p}{):}
+                \PYG{n}{pair} \PYG{o}{=} \PYG{p}{(}\PYG{n}{b\PYGZus{}list}\PYG{p}{[}\PYG{n}{i}\PYG{p}{],} \PYG{n}{b\PYGZus{}list}\PYG{p}{[}\PYG{n}{i}\PYG{o}{+}\PYG{l+m+mi}{1}\PYG{p}{])}
+                \PYG{n}{rank} \PYG{o}{=} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{merge\PYGZus{}ranks}\PYG{o}{.}\PYG{n}{get}\PYG{p}{(}\PYG{n}{pair}\PYG{p}{)}
+                \PYG{k}{if} \PYG{n}{rank} \PYG{o+ow}{is} \PYG{o+ow}{not} \PYG{k+kc}{None} \PYG{o+ow}{and} \PYG{n}{rank} \PYG{o}{\PYGZlt{}} \PYG{n}{min\PYGZus{}rank}\PYG{p}{:}
+                    \PYG{n}{min\PYGZus{}rank} \PYG{o}{=} \PYG{n}{rank}
+                    \PYG{n}{best\PYGZus{}pair} \PYG{o}{=} \PYG{n}{pair}
+
+            \PYG{c+c1}{\PYGZsh{} 如果没有任何一对在 merge\PYGZus{}ranks 中，说明合并彻底完成}
+            \PYG{k}{if} \PYG{n}{best\PYGZus{}pair} \PYG{o+ow}{is} \PYG{k+kc}{None}\PYG{p}{:}
+                \PYG{k}{break}
+
+            \PYG{c+c1}{\PYGZsh{} 执行最高优先级的一轮合并}
+            \PYG{n}{new\PYGZus{}b\PYGZus{}list} \PYG{o}{=} \PYG{p}{[]}
+            \PYG{n}{i} \PYG{o}{=} \PYG{l+m+mi}{0}
+            \PYG{k}{while} \PYG{n}{i} \PYG{o}{\PYGZlt{}} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{b\PYGZus{}list}\PYG{p}{):}
+                \PYG{c+c1}{\PYGZsh{} 命中目标 pair}
+                \PYG{k}{if} \PYG{n}{i} \PYG{o}{\PYGZlt{}} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{b\PYGZus{}list}\PYG{p}{)} \PYG{o}{\PYGZhy{}} \PYG{l+m+mi}{1} \PYG{o+ow}{and} \PYG{n}{b\PYGZus{}list}\PYG{p}{[}\PYG{n}{i}\PYG{p}{]} \PYG{o}{==} \PYG{n}{best\PYGZus{}pair}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o+ow}{and} \PYG{n}{b\PYGZus{}list}\PYG{p}{[}\PYG{n}{i}\PYG{o}{+}\PYG{l+m+mi}{1}\PYG{p}{]} \PYG{o}{==} \PYG{n}{best\PYGZus{}pair}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]:}
+                    \PYG{n}{new\PYGZus{}b\PYGZus{}list}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{n}{best\PYGZus{}pair}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]} \PYG{o}{+} \PYG{n}{best\PYGZus{}pair}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{])}
+                    \PYG{n}{i} \PYG{o}{+=} \PYG{l+m+mi}{2}
+                \PYG{k}{else}\PYG{p}{:}
+                    \PYG{n}{new\PYGZus{}b\PYGZus{}list}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{n}{b\PYGZus{}list}\PYG{p}{[}\PYG{n}{i}\PYG{p}{])}
+                    \PYG{n}{i} \PYG{o}{+=} \PYG{l+m+mi}{1}
+                    
+            \PYG{n}{b\PYGZus{}list} \PYG{o}{=} \PYG{n}{new\PYGZus{}b\PYGZus{}list}
+            
+            \PYG{c+c1}{\PYGZsh{} 如果只剩下一个完整的 token，提前退出}
+            \PYG{k}{if} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{b\PYGZus{}list}\PYG{p}{)} \PYG{o}{==} \PYG{l+m+mi}{1}\PYG{p}{:}
+                \PYG{k}{break}
+
+        \PYG{c+c1}{\PYGZsh{} 拿着最终合并好的字节序列，去词表里换取对应的 IDs}
+        \PYG{k}{return} \PYG{p}{[}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{token\PYGZus{}to\PYGZus{}id}\PYG{p}{[}\PYG{n}{b}\PYG{p}{]} \PYG{k}{for} \PYG{n}{b} \PYG{o+ow}{in} \PYG{n}{b\PYGZus{}list}\PYG{p}{]}
+
+    \PYG{k}{def} \PYG{n+nf}{encode}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{text}\PYG{p}{:} \PYG{n+nb}{str}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{]:}
+\PYG{+w}{        }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{        将整段输入文本编码为 token IDs。}
+\PYG{l+s+sd}{        \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+        \PYG{n}{ids} \PYG{o}{=} \PYG{p}{[]}
+        
+        \PYG{c+c1}{\PYGZsh{} 1. 全局截断：优先将文本通过 special\PYGZus{}tokens 切开}
+        \PYG{k}{if} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{st\PYGZus{}pattern}\PYG{p}{:}
+            \PYG{n}{parts} \PYG{o}{=} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{st\PYGZus{}pattern}\PYG{o}{.}\PYG{n}{split}\PYG{p}{(}\PYG{n}{text}\PYG{p}{)}
+        \PYG{k}{else}\PYG{p}{:}
+            \PYG{n}{parts} \PYG{o}{=} \PYG{p}{[}\PYG{n}{text}\PYG{p}{]}
+
+        \PYG{k}{for} \PYG{n}{part} \PYG{o+ow}{in} \PYG{n}{parts}\PYG{p}{:}
+            \PYG{k}{if} \PYG{o+ow}{not} \PYG{n}{part}\PYG{p}{:}
+                \PYG{k}{continue}
+                
+            \PYG{c+c1}{\PYGZsh{} 2. 如果这块 part 是一个 special token，直接查 ID}
+            \PYG{k}{if} \PYG{n}{part} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{:}
+                \PYG{n}{ids}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{token\PYGZus{}to\PYGZus{}id}\PYG{p}{[}\PYG{n}{part}\PYG{o}{.}\PYG{n}{encode}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}utf\PYGZhy{}8\PYGZdq{}}\PYG{p}{)])}
+            \PYG{k}{else}\PYG{p}{:}
+                \PYG{c+c1}{\PYGZsh{} 3. 对普通文本进行预分词匹配}
+                \PYG{k}{for} \PYG{n}{match} \PYG{o+ow}{in} \PYG{n}{PRETOKEN\PYGZus{}REGEX}\PYG{o}{.}\PYG{n}{finditer}\PYG{p}{(}\PYG{n}{part}\PYG{p}{):}
+                    \PYG{n}{chunk\PYGZus{}text} \PYG{o}{=} \PYG{n}{match}\PYG{o}{.}\PYG{n}{group}\PYG{p}{()}
+                    \PYG{n}{ids}\PYG{o}{.}\PYG{n}{extend}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{\PYGZus{}bpe\PYGZus{}encode\PYGZus{}chunk}\PYG{p}{(}\PYG{n}{chunk\PYGZus{}text}\PYG{p}{))}
+                    
+        \PYG{k}{return} \PYG{n}{ids}
+
+    \PYG{k}{def} \PYG{n+nf}{encode\PYGZus{}iterable}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{iterable}\PYG{p}{:} \PYG{n}{Iterable}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{])} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Iterator}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{]:}
+\PYG{+w}{        }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{        懒加载生成器：逐块/逐行读取流数据并输出 IDs，确保内存开销维持在常数级别。}
+\PYG{l+s+sd}{        说明：对于标准的文件句柄 (File Handle)，每次 yield 的是一行。}
+\PYG{l+s+sd}{        换行符属于 BPE 空格家族，因此按行拆分不会截断合法的词组边界。}
+\PYG{l+s+sd}{        \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+        \PYG{k}{for} \PYG{n}{chunk} \PYG{o+ow}{in} \PYG{n}{iterable}\PYG{p}{:}
+            \PYG{k}{yield from} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{encode}\PYG{p}{(}\PYG{n}{chunk}\PYG{p}{)}
+
+    \PYG{k}{def} \PYG{n+nf}{decode}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{ids}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{])} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n+nb}{str}\PYG{p}{:}
+\PYG{+w}{        }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{        将整数 ID 序列还原为字符串。非法字节将被自动替换为 U+FFFD ()。}
+\PYG{l+s+sd}{        \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+        \PYG{n}{raw\PYGZus{}bytes} \PYG{o}{=} \PYG{l+s+sa}{b}\PYG{l+s+s2}{\PYGZdq{}\PYGZdq{}}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{vocab}\PYG{p}{[}\PYG{n}{idx}\PYG{p}{]} \PYG{k}{for} \PYG{n}{idx} \PYG{o+ow}{in} \PYG{n}{ids}\PYG{p}{)}
+        \PYG{k}{return} \PYG{n}{raw\PYGZus{}bytes}\PYG{o}{.}\PYG{n}{decode}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}utf\PYGZhy{}8\PYGZdq{}}\PYG{p}{,} \PYG{n}{errors}\PYG{o}{=}\PYG{l+s+s2}{\PYGZdq{}replace\PYGZdq{}}\PYG{p}{)}
+\end{Verbatim}

@@ -1,0 +1,21 @@
+\section{Assignment Overview}
+
+\paragraph{What you will implement}
+
+\begin{enumerate}[itemsep=0pt, parsep=0pt, topsep=0pt]
+    \item Byte-pair encoding (BPE) tokenizer \hfill \tcbox[on line, boxsep=0pt, left=2pt, right=2pt, top=2pt, bottom=2pt, colback=green!10, colframe=green!50!black, fontupper=\tiny\bfseries]{DONE}
+    \item Transformer language model (LM)
+    \item The cross-entropy loss function and the AdamW optimizer
+    \item The training loop, with support for serializing and loading model and optimizer state
+\end{enumerate}
+
+\paragraph{What you will run}
+
+\begin{enumerate}[itemsep=0pt, parsep=0pt, topsep=0pt]
+    \item Train a BPE tokenizer on the TinyStories dataset. \hfill \tcbox[on line, boxsep=0pt, left=2pt, right=2pt, top=2pt, bottom=2pt, colback=green!10, colframe=green!50!black, fontupper=\tiny\bfseries]{DONE}
+    \item Run your trained tokenizer on the dataset to convert it into a sequence of integer IDs.
+    \item Train a Transformer LM on the TinyStories dataset.
+    \item Generate samples and evaluate perplexity using the trained Transformer LM.
+    \item Train models on OpenWebText and submit your attained perplexities to a leaderboard.
+\end{enumerate}
+

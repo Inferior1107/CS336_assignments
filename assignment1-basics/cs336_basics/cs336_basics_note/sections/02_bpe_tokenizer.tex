@@ -1,0 +1,232 @@
+\section{Byte-Pair Encoding (BPE) Tokenizer}
+\subsection{The Unicode Standard}
+
+In Python, you can use the \mintinline{python}{ord()} function to convert a single Unicode character into its integer representation.
+The \mintinline{python}{chr()} function converts an integer Unicode code point into a string with the corresponding character.
+
+\begin{problembox}{unicode1}{Understanding Unicode (1 point)}
+
+    \begin{enumerate}[label=(\alph*), itemsep=0.5em, topsep=0pt]
+
+        \item What Unicode character does \texttt{chr(0)} return? \\
+              \textbf{Answer:} \mintinline{python}{'\x00'}
+
+        \item How does this character's string representation \mintinline{python}{__repr__()} differ from its printed representation? \\
+              \textbf{Answer:} The \mintinline{python}{__repr__()} is designed to be \textbf{unambiguous} and is mainly for developers, showing the technical details of the object. On the other hand, the printed representation is meant to be \textbf{readable} and user-friendly.
+
+        \item What happens when this character occurs in text? It may be helpful to play around with the following in your Python interpreter and see if it matches your expectations:
+
+              \textbf{Answer:} Code below.
+
+              \begin{minted}[xleftmargin=1.5em, framesep=5pt]{pycon}
+>>> chr(0)
+'\x00'
+>>> print(chr(0))
+
+>>> "this is a test" + chr(0) + "string"
+'this is a test\x00string'
+>>> print("this is a test" + chr(0) + "string")
+this is a teststring
+\end{minted}
+
+    \end{enumerate}
+
+\end{problembox}
+
+\newpage
+\subsection{Unicode Encodings}
+
+\begin{itemize}[itemsep=0pt, parsep=0pt, topsep=0pt]
+    \item UTF-8: The Efficient Variable-Length Encoder, It uses 1 to 4 bytes per character.
+    \item UTF-16: The Middle Ground, It uses either 2 or 4 bytes per character.
+    \item UTF-32: The Simple Fixed-Length Encoder, It uses exactly 4 bytes for every character, regardless of what it is.
+\end{itemize}
+
+\begin{problembox}{unicode2}{Unicode Encodings (3 point)}
+
+    \begin{enumerate}[label=(\alph*), itemsep=0.5em, topsep=0pt]
+
+        \item What are some reasons to prefer training our tokenizer on UTF-8 encoded bytes, rather than UTF-16 or UTF-32? It may be helpful to compare the output of these encodings for various input strings.\\
+              \textbf{Answer:} \mintinline{python}{'\x00'}
+
+        \item Consider the following (incorrect) function, which is intended to decode a UTF-8 byte string into a Unicode string. Why is this function incorrect? Provide an example of an input byte string that yields incorrect results. \\
+              \vspace{-1.5em}
+              \begin{minted}[xleftmargin=1.5em, framesep=5pt]{python}
+def decode_utf8_bytes_to_str_wrong(bytestring: bytes): 
+    return "".join([bytes([b]).decode("utf-8") for b in bytestring])
+\end{minted}
+
+              \vspace{-1em}
+
+              \begin{minted}[xleftmargin=1.5em, framesep=5pt]{pycon}
+>>> decode_utf8_bytes_to_str_wrong("hello".encode("utf-8"))
+'hello'
+\end{minted}
+
+              \textbf{Example:} \mintinline{python}{b'\xe4\xb8\xad'}.\\
+              \textbf{Answer:} This function is incorrect because it attempts to decode each byte individually, which fails for any character encoded as a multi-byte sequence, resulting in a \mintinline{python}{UnicodeDecodeError}.
+
+        \item Give a two byte sequence that does not decode to any Unicode character(s).\\
+              \textbf{Example:} \mintinline{python}{b'\xff\xff'}.\\
+              \textbf{Answer:} This sequence is invalid because the byte \mintinline{python}{0xFF} is explicitly forbidden in the UTF-8 standard and does not correspond to any valid lead or continuation byte in the encoding scheme.
+
+    \end{enumerate}
+
+\end{problembox}
+\newpage
+\subsection{Subword Tokenization}
+
+Sennrich et al. [2016] propose to use byte-pair encoding (BPE; Gage, 1994), a compression algorithm that iteratively replaces (``merges'') the most frequent pair of bytes with a single, new unused index.
+
+\subsection{BPE Tokenizer Training}
+
+\paragraph{Vocabulary initialization}
+
+\paragraph{Pre-tokenization}
+Use regular expressions to split the sentence into independent punctuation marks and independent items that may include spaces, and improve the merging effect by counting the occurrence frequency of these independent items.
+\begin{minted}[xleftmargin=1.5em, framesep=5pt]{pycon}
+>>> PAT = r"""'(?:[sdmt]|ll|ve|re)| ?\p{L}+| ?\p{N}+| ?[^\s\p{L}\p{N}]+|\s+(?!\S)|\s+"""
+>>> # requires `regex` package
+>>> import regex as re
+>>> re.findall(PAT, "some text that i'll pre-tokenize")
+['some', ' text', ' that', ' i', "'ll", ' pre', '-', 'tokenize']
+\end{minted}
+
+\paragraph{Compute BPE merges} During the BPE merging process, two \textbf{principles} must be followed:
+
+\begin{itemize}[itemsep=0pt, parsep=0pt, topsep=0pt]
+    \item Do not \textbf{cross} pre-tokenization boundaries (this is already guaranteed algorithmically);
+    \item Handle issues with a \textbf{reproducible conflict resolution strategy}, such as selecting the lexicographically largest word pair to merge when the occurrence counts are the same.
+\end{itemize}
+
+\paragraph{Special tokens}
+
+\newpage
+
+\subsection{Experimenting with BPE Tokenizer Training}
+
+\paragraph{Parallelizing pre-tokenization} Using the provided segmentation code and the \mintinline{python}{multiprocessing} library, parallelize the tokenization statistics.
+
+\paragraph{Removing special tokens before pre-tokenization}
+
+\paragraph{Optimizing the merging step} After performing a statistical pass to obtain a tokenization table with frequencies, perform merging only within that tokenization table.
+
+\begin{tipbox}{Profiling}
+    You should use profiling tools like \texttt{cProfile} or \texttt{scalene} to identify the bottlenecks in your implementation, and focus on optimizing those.
+\end{tipbox}
+
+\begin{problembox}{train\_bpe}{BPE Tokenizer Training (15 points)}
+
+    \qquad \textbf{Deliverable:} Write a function that, given a path to an input text file, trains a (byte-level) BPE tokenizer. Your BPE training function should handle (at least) the following input parameters:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=0.8em, parsep=0pt]
+        \item \texttt{input\_path}: \textcolor{green!50!black}{\texttt{str}} Path to a text file with BPE tokenizer training data.
+
+        \item \texttt{vocab\_size}: \textcolor{green!50!black}{\texttt{int}} A positive integer that defines the maximum final vocabulary size (including the initial byte vocabulary, vocabulary items produced from merging, and any special tokens).
+
+        \item \texttt{special\_tokens}: \textcolor{green!50!black}{\texttt{list[str]}} A list of strings to add to the vocabulary. These special tokens do not otherwise affect BPE training.
+    \end{itemize}
+
+    Your BPE training function should return the resulting vocabulary and merges:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=0.8em, parsep=0pt]
+        \item \texttt{vocab}: \textcolor{green!50!black}{\texttt{dict[int, bytes]}} The tokenizer vocabulary, a mapping from \textcolor{green!50!black}{\texttt{int}} (token ID in the vocabulary) to \textcolor{green!50!black}{\texttt{bytes}} (token bytes).
+
+        \item \texttt{merges}: \textcolor{green!50!black}{\texttt{list[tuple[bytes, bytes]]}} A list of BPE merges produced from training. Each list item is a \textcolor{green!50!black}{\texttt{tuple}} of \textcolor{green!50!black}{\texttt{bytes}} (\texttt{<token1>}, \texttt{<token2>}), representing that \texttt{<token1>} was merged with \texttt{<token2>}. The merges should be ordered by order of creation.
+    \end{itemize}
+
+\end{problembox}
+
+\begin{ideabox}{BPE Tokenizer Training}
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=0.8em, parsep=0pt]
+        \item \textbf{Python plus Rust}: Python is used for rapid prototyping, while Rust handles the actual deployment of the product.
+
+        \item \textbf{Glitch Tokens}: Due to insufficiently strict data cleaning, some meaningless words—namely \textbf{Mojibake}—may appear during the BPE training process. Moreover, because of BPE's \textbf{greedy, unsupervised, and non-semantic nature}, a large number of such meaningless word merges occur, turning them into abnormally long and nonsensical words.
+
+        \item \textbf{Vocabulary Bloat (Dead Tokens)}: Because BPE is incremental and never removes merges, the intermediate products of long words permanently occupy the vocabulary, leading to wasted model parameters and tokenization fragmentation. In industry, there are three approaches to address this issue: First, absolutely aggressive data cleaning; second, stricter regex filtering. Both of these are common methods for limiting glitch tokens. The third approach is to switch to the \textbf{Unigram} algorithm, which is frequently used by Google-family models (such as T5 and some Llama variants).
+
+        \item \textbf{Unigram}: Unigram works by "subtraction": it first initializes an extremely large vocabulary (e.g., 100,000 words) and \textbf{then calculates how much the overall corpus compression rate would be affected if a given word were removed}. Those useless intermediate composite words are directly eliminated and discarded during training.
+    \end{itemize}
+
+\end{ideabox}
+
+\begin{problembox}{train\_bpe\_tinystories}{BPE Training on TinyStories (2 points)}
+
+    \begin{enumerate}[label=(\alph*), itemsep=1em, topsep=0pt]
+
+        \item Train a byte-level BPE tokenizer on the TinyStories dataset, using a maximum vocabulary size of 10,000. Make sure to add the TinyStories \texttt{\textless|endoftext|\textgreater} special token to the vocabulary. Serialize the resulting vocabulary and merges to disk for further inspection. How many hours and memory did training take? What is the longest token in the vocabulary? Does it make sense?
+
+              \textbf{Resource requirements:} $\le$ 30 minutes (no GPUs), $\le$ 30GB RAM \\
+              \textbf{Resource used:} 10.78 seconds, 2.6GB RAM \\
+              \textbf{Longest token:} ' disappointment'
+
+        \item Profile your code. What part of the tokenizer training process takes the most time?
+
+              \textbf{Answer:} \mintinline{python}{process_chunk_with_special_tokens} takes up the vast majority of the time.
+
+    \end{enumerate}
+
+\end{problembox}
+
+\begin{problembox}{train\_bpe\_expts\_owt}{BPE Training on OpenWebText (2 points)}
+
+    \begin{enumerate}[label=(\alph*), itemsep=1em, topsep=0pt]
+
+        \item Train a byte-level BPE tokenizer on the OpenWebText dataset, using a maximum vocabulary size of 32,000. Serialize the resulting vocabulary and merges to disk for further inspection. What is the longest token in the vocabulary? Does it make sense?
+
+              \textbf{Resource requirements:} $\le$ 12 hours (no GPUs), $\le$ 100GB RAM \\
+              \textbf{Resource used:} 6 minutes, 7.0GB RAM \\
+              \textbf{Longest token:} '----------------------------------------------------------------'
+
+        \item Compare and contrast the tokenizer that you get training on TinyStories versus OpenWebText.
+
+              \textbf{Answer:} Because TinyStories has an extremely limited vocabulary, a 10k vocab size forces the BPE tokenizer to over-merge, creating tokens that represent entire multi-word phrases. In contrast, OpenWebText's diverse internet text requires the BPE algorithm to rely heavily on subwords (like prefixes and suffixes) to represent its massive vocabulary within a 32k limit, resulting in shorter, more fragmented tokens for rare words.
+
+    \end{enumerate}
+
+\end{problembox}
+
+\subsection{BPE Tokenizer: Encoding and Decoding}
+
+\subsubsection{Encoding text}
+
+\paragraph{Special tokens.}
+
+\paragraph{Memory considerations.} \vspace{-1em}
+
+\subsubsection{Decoding text}
+
+\begin{problembox}{tokenizer}{Implementing the tokenizer (15 points)}
+
+    \qquad \textbf{Deliverable:} Implement a \texttt{Tokenizer} class that, given a vocabulary and a list of merges, encodes text into integer IDs and decodes integer IDs into text. Your tokenizer should also support user-provided special tokens (appending them to the vocabulary if they aren't already there).
+
+    \qquad \textbf{Answer:} code in appendix.
+
+\end{problembox}
+
+\subsection{Experiments}
+
+\begin{problembox}{tokenizer\_experiments}{Experiments with tokenizers \hfill (4 points)}
+
+    \begin{enumerate}[label=(\alph*), itemsep=1em, topsep=0pt]
+
+        \item Sample 10 documents from TinyStories and OpenWebText. Using your previously-trained TinyStories and OpenWebText tokenizers (10K and 32K vocabulary size, respectively), encode these sampled documents into integer IDs. What is each tokenizer's compression ratio (bytes/token)?
+
+              \textbf{Answer:} The TinyStories tokenizer achieves a higher compression ratio (5.5 bytes/token) because its vocabulary easily memorizes long, frequent whole words from its restricted domain. In contrast, the OpenWebText tokenizer has a lower compression ratio (3.8 bytes/token) as it must rely heavily on shorter subwords to encode a highly diverse vocabulary.
+
+        \item What happens if you tokenize your OpenWebText sample with the TinyStories tokenizer? Compare the compression ratio and/or qualitatively describe what happens.
+
+              \textbf{Answer:} Tokenizing OpenWebText with the TinyStories tokenizer causes a severe domain mismatch, forcing the tokenizer to aggressively fragment unfamiliar web text into individual characters or very small byte sequences. Consequently, the token count explodes, resulting in a dramatically lower (worse) compression ratio compared to using the native OpenWebText tokenizer.
+
+        \item Estimate the throughput of your tokenizer (e.g., in bytes/second). How long would it take to tokenize the Pile dataset (825GB of text)?
+
+              \textbf{Answer:} The throughput of the tokenizer depends on the implementation details, but a rough estimate for a modern CPU might be around 100 MB/second. Given the Pile dataset's size of 825GB, it would take approximately 8.25 hours to tokenize the entire dataset.
+
+        \item Using your TinyStories and OpenWebText tokenizers, encode the respective training and development datasets into a sequence of integer token IDs. We'll use this later to train our language model. We recommend serializing the token IDs as a NumPy array of datatype \texttt{uint16}. Why is \texttt{uint16} an appropriate choice?
+
+              \textbf{Answer:} \texttt{uint16} is an appropriate choice because it can represent all possible token IDs within the range of 0 to 65,535, which is sufficient for most practical applications and allows for efficient memory usage.
+
+    \end{enumerate}
+
+\end{problembox}

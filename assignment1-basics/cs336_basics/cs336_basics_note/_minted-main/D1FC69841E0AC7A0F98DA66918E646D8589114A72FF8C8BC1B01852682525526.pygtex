@@ -1,0 +1,591 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k+kn}{from} \PYG{n+nn}{\PYGZus{}\PYGZus{}future\PYGZus{}\PYGZus{}} \PYG{k+kn}{import} \PYG{n}{annotations}
+
+\PYG{k+kn}{import} \PYG{n+nn}{os}
+\PYG{k+kn}{import} \PYG{n+nn}{collections}
+\PYG{k+kn}{import} \PYG{n+nn}{json}
+\PYG{k+kn}{import} \PYG{n+nn}{regex}
+\PYG{k+kn}{from} \PYG{n+nn}{collections.abc} \PYG{k+kn}{import} \PYG{n}{Iterable}
+\PYG{k+kn}{from} \PYG{n+nn}{typing} \PYG{k+kn}{import} \PYG{n}{IO}\PYG{p}{,} \PYG{n}{Any}\PYG{p}{,} \PYG{n}{BinaryIO}\PYG{p}{,} \PYG{n}{Dict}\PYG{p}{,} \PYG{n}{List}\PYG{p}{,} \PYG{n}{Tuple}
+
+\PYG{k+kn}{import} \PYG{n+nn}{numpy.typing} \PYG{k}{as} \PYG{n+nn}{npt}
+\PYG{k+kn}{import} \PYG{n+nn}{torch}
+\PYG{k+kn}{from} \PYG{n+nn}{jaxtyping} \PYG{k+kn}{import} \PYG{n}{Bool}\PYG{p}{,} \PYG{n}{Float}\PYG{p}{,} \PYG{n}{Int}
+\PYG{k+kn}{from} \PYG{n+nn}{torch} \PYG{k+kn}{import} \PYG{n}{Tensor}
+\PYG{k+kn}{from} \PYG{n+nn}{collections} \PYG{k+kn}{import} \PYG{n}{defaultdict}
+\PYG{k+kn}{import} \PYG{n+nn}{pickle}
+
+\PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.test\PYGZus{}function.bpe\PYGZus{}trainer} \PYG{k+kn}{import} \PYG{n}{train\PYGZus{}bpe}
+\PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.test\PYGZus{}function.tokenizer} \PYG{k+kn}{import} \PYG{n}{Tokenizer}
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}linear}\PYG{p}{(}
+    \PYG{n}{d\PYGZus{}in}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{d\PYGZus{}out}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{weights}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}out d\PYGZus{}in\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{in\PYGZus{}features}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... d\PYGZus{}in\PYGZdq{}}\PYG{p}{],}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... d\PYGZus{}out\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given the weights of a Linear layer, compute the transformation of a batched input.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        in\PYGZus{}dim (int): The size of the input dimension}
+\PYG{l+s+sd}{        out\PYGZus{}dim (int): The size of the output dimension}
+\PYG{l+s+sd}{        weights (Float[Tensor, \PYGZdq{}d\PYGZus{}out d\PYGZus{}in\PYGZdq{}]): The linear weights to use}
+\PYG{l+s+sd}{        in\PYGZus{}features (Float[Tensor, \PYGZdq{}... d\PYGZus{}in\PYGZdq{}]): The output tensor to apply the function to}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}... d\PYGZus{}out\PYGZdq{}]: The transformed output of your linear module.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}embedding}\PYG{p}{(}
+    \PYG{n}{vocab\PYGZus{}size}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{d\PYGZus{}model}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{weights}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} vocab\PYGZus{}size d\PYGZus{}model\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{token\PYGZus{}ids}\PYG{p}{:} \PYG{n}{Int}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ...\PYGZdq{}}\PYG{p}{],}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... d\PYGZus{}model\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given the weights of an Embedding layer, get the embeddings for a batch of token ids.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        vocab\PYGZus{}size (int): The number of embeddings in the vocabulary}
+\PYG{l+s+sd}{        d\PYGZus{}model (int): The size of the embedding dimension}
+\PYG{l+s+sd}{        weights (Float[Tensor, \PYGZdq{}vocab\PYGZus{}size d\PYGZus{}model\PYGZdq{}]): The embedding vectors to fetch from}
+\PYG{l+s+sd}{        token\PYGZus{}ids (Int[Tensor, \PYGZdq{}...\PYGZdq{}]): The set of token ids to fetch from the Embedding layer}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}... d\PYGZus{}model\PYGZdq{}]: Batch of embeddings returned by your Embedding layer.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}swiglu}\PYG{p}{(}
+    \PYG{n}{d\PYGZus{}model}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{d\PYGZus{}ff}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{w1\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}ff d\PYGZus{}model\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{w2\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}model d\PYGZus{}ff\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{w3\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}ff d\PYGZus{}model\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{in\PYGZus{}features}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... d\PYGZus{}model\PYGZdq{}}\PYG{p}{],}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... d\PYGZus{}model\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}Given the weights of a SwiGLU network, return}
+\PYG{l+s+sd}{    the output of your implementation with these weights.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        d\PYGZus{}model (int): Dimensionality of the feedforward input and output.}
+\PYG{l+s+sd}{        d\PYGZus{}ff (int): Dimensionality of the up\PYGZhy{}project happening internally to your swiglu.}
+\PYG{l+s+sd}{        w1\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}ff d\PYGZus{}model\PYGZdq{}]): Stored weights for W1}
+\PYG{l+s+sd}{        w2\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}model d\PYGZus{}ff\PYGZdq{}]): Stored weights for W2}
+\PYG{l+s+sd}{        w3\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}ff d\PYGZus{}model\PYGZdq{}]): Stored weights for W3}
+\PYG{l+s+sd}{        in\PYGZus{}features (Float[Tensor, \PYGZdq{}... d\PYGZus{}model\PYGZdq{}]): Input embeddings to the feed\PYGZhy{}forward layer.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}... d\PYGZus{}model\PYGZdq{}]: Output embeddings of the same shape as the input embeddings.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{c+c1}{\PYGZsh{} Example:}
+    \PYG{c+c1}{\PYGZsh{} If your state dict keys match, you can use `load\PYGZus{}state\PYGZus{}dict()`}
+    \PYG{c+c1}{\PYGZsh{} swiglu.load\PYGZus{}state\PYGZus{}dict(weights)}
+    \PYG{c+c1}{\PYGZsh{} You can also manually assign the weights}
+    \PYG{c+c1}{\PYGZsh{} swiglu.w1.weight.data = w1\PYGZus{}weight}
+    \PYG{c+c1}{\PYGZsh{} swiglu.w2.weight.data = w2\PYGZus{}weight}
+    \PYG{c+c1}{\PYGZsh{} swiglu.w3.weight.data = w3\PYGZus{}weight}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}scaled\PYGZus{}dot\PYGZus{}product\PYGZus{}attention}\PYG{p}{(}
+    \PYG{n}{Q}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... queries d\PYGZus{}k\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{K}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... keys d\PYGZus{}k\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{V}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... values d\PYGZus{}v\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{mask}\PYG{p}{:} \PYG{n}{Bool}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... queries keys\PYGZdq{}}\PYG{p}{]} \PYG{o}{|} \PYG{k+kc}{None} \PYG{o}{=} \PYG{k+kc}{None}\PYG{p}{,}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... queries d\PYGZus{}v\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given key (K), query (Q), and value (V) tensors, return}
+\PYG{l+s+sd}{    the output of your scaled dot product attention implementation.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        Q (Float[Tensor, \PYGZdq{} ... queries d\PYGZus{}k\PYGZdq{}]): Query tensor}
+\PYG{l+s+sd}{        K (Float[Tensor, \PYGZdq{} ... keys d\PYGZus{}k\PYGZdq{}]): Key tensor}
+\PYG{l+s+sd}{        V (Float[Tensor, \PYGZdq{} ... values d\PYGZus{}v\PYGZdq{}]): Values tensor}
+\PYG{l+s+sd}{        mask (Bool[Tensor, \PYGZdq{} ... queries keys\PYGZdq{}] | None): Mask tensor}
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{} ... queries d\PYGZus{}v\PYGZdq{}]: Output of SDPA}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}multihead\PYGZus{}self\PYGZus{}attention}\PYG{p}{(}
+    \PYG{n}{d\PYGZus{}model}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{num\PYGZus{}heads}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{q\PYGZus{}proj\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}k d\PYGZus{}in\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{k\PYGZus{}proj\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}k d\PYGZus{}in\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{v\PYGZus{}proj\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}v d\PYGZus{}in\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{o\PYGZus{}proj\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}model d\PYGZus{}v\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{in\PYGZus{}features}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}in\PYGZdq{}}\PYG{p}{],}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}out\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given the key, query, and value projection weights of a naive unbatched}
+\PYG{l+s+sd}{    implementation of multi\PYGZhy{}head attention, return the output of an optimized batched}
+\PYG{l+s+sd}{    implementation. This implementation should handle the key, query, and value projections}
+\PYG{l+s+sd}{    for all heads in a single matrix multiply.}
+\PYG{l+s+sd}{    This function should not use RoPE.}
+\PYG{l+s+sd}{    See section 3.2.2 of Vaswani et al., 2017.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        d\PYGZus{}model (int): Dimensionality of the feedforward input and output.}
+\PYG{l+s+sd}{        num\PYGZus{}heads (int): Number of heads to use in multi\PYGZhy{}headed attention.}
+\PYG{l+s+sd}{        max\PYGZus{}seq\PYGZus{}len (int): Maximum sequence length to pre\PYGZhy{}cache if your implementation does that.}
+\PYG{l+s+sd}{        q\PYGZus{}proj\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}k d\PYGZus{}in\PYGZdq{}]): Weights for the Q projection}
+\PYG{l+s+sd}{        k\PYGZus{}proj\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}k d\PYGZus{}in\PYGZdq{}]): Weights for the K projection}
+\PYG{l+s+sd}{        v\PYGZus{}proj\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}k d\PYGZus{}in\PYGZdq{}]): Weights for the V projection}
+\PYG{l+s+sd}{        o\PYGZus{}proj\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}model d\PYGZus{}v\PYGZdq{}]): Weights for the output projection}
+\PYG{l+s+sd}{        in\PYGZus{}features (Float[Tensor, \PYGZdq{}... sequence\PYGZus{}length d\PYGZus{}in\PYGZdq{}]): Tensor to run your implementation on.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}out\PYGZdq{}]: Tensor with the output of running your optimized, batched multi\PYGZhy{}headed attention}
+\PYG{l+s+sd}{        implementation with the given QKV projection weights and input features.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}multihead\PYGZus{}self\PYGZus{}attention\PYGZus{}with\PYGZus{}rope}\PYG{p}{(}
+    \PYG{n}{d\PYGZus{}model}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{num\PYGZus{}heads}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{max\PYGZus{}seq\PYGZus{}len}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{theta}\PYG{p}{:} \PYG{n+nb}{float}\PYG{p}{,}
+    \PYG{n}{q\PYGZus{}proj\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}k d\PYGZus{}in\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{k\PYGZus{}proj\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}k d\PYGZus{}in\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{v\PYGZus{}proj\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}v d\PYGZus{}in\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{o\PYGZus{}proj\PYGZus{}weight}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}model d\PYGZus{}v\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{in\PYGZus{}features}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}in\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{token\PYGZus{}positions}\PYG{p}{:} \PYG{n}{Int}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... sequence\PYGZus{}length\PYGZdq{}}\PYG{p}{]} \PYG{o}{|} \PYG{k+kc}{None} \PYG{o}{=} \PYG{k+kc}{None}\PYG{p}{,}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}out\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given the key, query, and value projection weights of a naive unbatched}
+\PYG{l+s+sd}{    implementation of multi\PYGZhy{}head attention, return the output of an optimized batched}
+\PYG{l+s+sd}{    implementation. This implementation should handle the key, query, and value projections}
+\PYG{l+s+sd}{    for all heads in a single matrix multiply.}
+\PYG{l+s+sd}{    This version of MHA should include RoPE.}
+\PYG{l+s+sd}{    In this case, the RoPE embedding dimension must be the head embedding dimension (d\PYGZus{}model // num\PYGZus{}heads).}
+\PYG{l+s+sd}{    See section 3.2.2 of Vaswani et al., 2017.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        d\PYGZus{}model (int): Dimensionality of the feedforward input and output.}
+\PYG{l+s+sd}{        num\PYGZus{}heads (int): Number of heads to use in multi\PYGZhy{}headed attention.}
+\PYG{l+s+sd}{        max\PYGZus{}seq\PYGZus{}len (int): Maximum sequence length to pre\PYGZhy{}cache if your implementation does that.}
+\PYG{l+s+sd}{        theta (float): RoPE parameter.}
+\PYG{l+s+sd}{        q\PYGZus{}proj\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}k d\PYGZus{}in\PYGZdq{}]): Weights for the Q projection}
+\PYG{l+s+sd}{        k\PYGZus{}proj\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}k d\PYGZus{}in\PYGZdq{}]): Weights for the K projection}
+\PYG{l+s+sd}{        v\PYGZus{}proj\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}k d\PYGZus{}in\PYGZdq{}]): Weights for the V projection}
+\PYG{l+s+sd}{        o\PYGZus{}proj\PYGZus{}weight (Float[Tensor, \PYGZdq{}d\PYGZus{}model d\PYGZus{}v\PYGZdq{}]): Weights for the output projection}
+\PYG{l+s+sd}{        in\PYGZus{}features (Float[Tensor, \PYGZdq{}... sequence\PYGZus{}length d\PYGZus{}in\PYGZdq{}]): Tensor to run your implementation on.}
+\PYG{l+s+sd}{        token\PYGZus{}positions (Int[Tensor, \PYGZdq{} ... sequence\PYGZus{}length\PYGZdq{}] | None): Optional tensor with the positions of the tokens}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}out\PYGZdq{}]: Tensor with the output of running your optimized, batched multi\PYGZhy{}headed attention}
+\PYG{l+s+sd}{        implementation with the given QKV projection weights and input features.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}rope}\PYG{p}{(}
+    \PYG{n}{d\PYGZus{}k}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{theta}\PYG{p}{:} \PYG{n+nb}{float}\PYG{p}{,}
+    \PYG{n}{max\PYGZus{}seq\PYGZus{}len}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{in\PYGZus{}query\PYGZus{}or\PYGZus{}key}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}k\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{token\PYGZus{}positions}\PYG{p}{:} \PYG{n}{Int}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... sequence\PYGZus{}length\PYGZdq{}}\PYG{p}{],}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}k\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Run RoPE for a given input tensor.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        d\PYGZus{}k (int): Embedding dimension size for the query or key tensor.}
+\PYG{l+s+sd}{        theta (float): RoPE parameter.}
+\PYG{l+s+sd}{        max\PYGZus{}seq\PYGZus{}len (int): Maximum sequence length to pre\PYGZhy{}cache if your implementation does that.}
+\PYG{l+s+sd}{        in\PYGZus{}query\PYGZus{}or\PYGZus{}key (Float[Tensor, \PYGZdq{}... sequence\PYGZus{}length d\PYGZus{}k\PYGZdq{}]): Input tensor to run RoPE on.}
+\PYG{l+s+sd}{        token\PYGZus{}positions (Int[Tensor, \PYGZdq{}... sequence\PYGZus{}length\PYGZdq{}]): Tensor of shape (batch\PYGZus{}size, sequence\PYGZus{}length) with the token positions}
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}k\PYGZdq{}]: Tensor with RoPEd input.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}transformer\PYGZus{}block}\PYG{p}{(}
+    \PYG{n}{d\PYGZus{}model}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{num\PYGZus{}heads}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{d\PYGZus{}ff}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{max\PYGZus{}seq\PYGZus{}len}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{theta}\PYG{p}{:} \PYG{n+nb}{float}\PYG{p}{,}
+    \PYG{n}{weights}\PYG{p}{:} \PYG{n+nb}{dict}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{,} \PYG{n}{Tensor}\PYG{p}{],}
+    \PYG{n}{in\PYGZus{}features}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} batch sequence\PYGZus{}length d\PYGZus{}model\PYGZdq{}}\PYG{p}{],}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} batch sequence\PYGZus{}length d\PYGZus{}model\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given the weights of a pre\PYGZhy{}norm Transformer block and input features,}
+\PYG{l+s+sd}{    return the output of running the Transformer block on the input features.}
+
+\PYG{l+s+sd}{    This function should use RoPE.}
+\PYG{l+s+sd}{    Depending on your implementation, you may simply need to pass the relevant args}
+\PYG{l+s+sd}{    to your TransformerBlock constructor, or you may need to initialize your own RoPE}
+\PYG{l+s+sd}{    class and pass that instead.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        d\PYGZus{}model (int): The dimensionality of the Transformer block input.}
+\PYG{l+s+sd}{        num\PYGZus{}heads (int): Number of heads to use in multi\PYGZhy{}headed attention. `d\PYGZus{}model` must be}
+\PYG{l+s+sd}{            evenly divisible by `num\PYGZus{}heads`.}
+\PYG{l+s+sd}{        d\PYGZus{}ff (int): Dimensionality of the feed\PYGZhy{}forward inner layer.}
+\PYG{l+s+sd}{        max\PYGZus{}seq\PYGZus{}len (int): Maximum sequence length to pre\PYGZhy{}cache if your implementation does that.}
+\PYG{l+s+sd}{        theta (float): RoPE parameter.}
+\PYG{l+s+sd}{        weights (dict[str, Tensor]):}
+\PYG{l+s+sd}{            State dict of our reference implementation.}
+\PYG{l+s+sd}{            The keys of this dictionary are:}
+\PYG{l+s+sd}{            \PYGZhy{} `attn.q\PYGZus{}proj.weight`}
+\PYG{l+s+sd}{                The query projections for all `num\PYGZus{}heads` attention heads.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model, d\PYGZus{}model).}
+\PYG{l+s+sd}{                The rows are ordered by matrices of shape (num\PYGZus{}heads, d\PYGZus{}k),}
+\PYG{l+s+sd}{                so `attn.q\PYGZus{}proj.weight == torch.cat([q\PYGZus{}heads.0.weight, ..., q\PYGZus{}heads.N.weight], dim=0)`.}
+\PYG{l+s+sd}{            \PYGZhy{} `attn.k\PYGZus{}proj.weight`}
+\PYG{l+s+sd}{                The key projections for all `num\PYGZus{}heads` attention heads.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model, d\PYGZus{}model).}
+\PYG{l+s+sd}{                The rows are ordered by matrices of shape (num\PYGZus{}heads, d\PYGZus{}k),}
+\PYG{l+s+sd}{                so `attn.k\PYGZus{}proj.weight == torch.cat([k\PYGZus{}heads.0.weight, ..., k\PYGZus{}heads.N.weight], dim=0)`.}
+\PYG{l+s+sd}{            \PYGZhy{} `attn.v\PYGZus{}proj.weight`}
+\PYG{l+s+sd}{                The value projections for all `num\PYGZus{}heads` attention heads.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model, d\PYGZus{}model).}
+\PYG{l+s+sd}{                The rows are ordered by matrices of shape (num\PYGZus{}heads, d\PYGZus{}v),}
+\PYG{l+s+sd}{                so `attn.v\PYGZus{}proj.weight == torch.cat([v\PYGZus{}heads.0.weight, ..., v\PYGZus{}heads.N.weight], dim=0)`.}
+\PYG{l+s+sd}{            \PYGZhy{} `attn.output\PYGZus{}proj.weight`}
+\PYG{l+s+sd}{                Weight of the multi\PYGZhy{}head self\PYGZhy{}attention output projection}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model, d\PYGZus{}model).}
+\PYG{l+s+sd}{            \PYGZhy{} `ln1.weight`}
+\PYG{l+s+sd}{                Weights of affine transform for the first RMSNorm}
+\PYG{l+s+sd}{                applied in the transformer block.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model,).}
+\PYG{l+s+sd}{            \PYGZhy{} `ffn.w1.weight`}
+\PYG{l+s+sd}{                Weight of the first linear transformation in the FFN.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model, d\PYGZus{}ff).}
+\PYG{l+s+sd}{            \PYGZhy{} `ffn.w2.weight`}
+\PYG{l+s+sd}{                Weight of the second linear transformation in the FFN.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}ff, d\PYGZus{}model).}
+\PYG{l+s+sd}{            \PYGZhy{} `ffn.w3.weight`}
+\PYG{l+s+sd}{                Weight of the third linear transformation in the FFN.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model, d\PYGZus{}ff).}
+\PYG{l+s+sd}{            \PYGZhy{} `ln2.weight`}
+\PYG{l+s+sd}{                Weights of affine transform for the second RMSNorm}
+\PYG{l+s+sd}{                applied in the transformer block.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model,).}
+\PYG{l+s+sd}{        in\PYGZus{}features (Float[Tensor, \PYGZdq{}batch sequence\PYGZus{}length d\PYGZus{}model\PYGZdq{}]):}
+\PYG{l+s+sd}{            Tensor to run your implementation on.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}batch sequence\PYGZus{}length d\PYGZus{}model\PYGZdq{}] Tensor with the output of}
+\PYG{l+s+sd}{        running the Transformer block on the input features while using RoPE.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}transformer\PYGZus{}lm}\PYG{p}{(}
+    \PYG{n}{vocab\PYGZus{}size}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{context\PYGZus{}length}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{d\PYGZus{}model}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{num\PYGZus{}layers}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{num\PYGZus{}heads}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{d\PYGZus{}ff}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{rope\PYGZus{}theta}\PYG{p}{:} \PYG{n+nb}{float}\PYG{p}{,}
+    \PYG{n}{weights}\PYG{p}{:} \PYG{n+nb}{dict}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{,} \PYG{n}{Tensor}\PYG{p}{],}
+    \PYG{n}{in\PYGZus{}indices}\PYG{p}{:} \PYG{n}{Int}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} batch\PYGZus{}size sequence\PYGZus{}length\PYGZdq{}}\PYG{p}{],}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} batch\PYGZus{}size sequence\PYGZus{}length vocab\PYGZus{}size\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sa}{r}\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}Given the weights of a Transformer language model and input indices,}
+\PYG{l+s+sd}{    return the output of running a forward pass on the input indices.}
+
+\PYG{l+s+sd}{    This function should use RoPE.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        vocab\PYGZus{}size (int): The number of unique items in the output vocabulary to be predicted.}
+\PYG{l+s+sd}{        context\PYGZus{}length (int): The maximum number of tokens to process at once.}
+\PYG{l+s+sd}{        d\PYGZus{}model (int): The dimensionality of the model embeddings and sublayer outputs.}
+\PYG{l+s+sd}{        num\PYGZus{}layers (int): The number of Transformer layers to use.}
+\PYG{l+s+sd}{        num\PYGZus{}heads (int): Number of heads to use in multi\PYGZhy{}headed attention. `d\PYGZus{}model` must be}
+\PYG{l+s+sd}{            evenly divisible by `num\PYGZus{}heads`.}
+\PYG{l+s+sd}{        d\PYGZus{}ff (int): Dimensionality of the feed\PYGZhy{}forward inner layer (section 3.3).}
+\PYG{l+s+sd}{        rope\PYGZus{}theta (float): The RoPE \PYGZdl{}\PYGZbs{}Theta\PYGZdl{} parameter.}
+\PYG{l+s+sd}{        weights (dict[str, Tensor]):}
+\PYG{l+s+sd}{            State dict of our reference implementation. \PYGZob{}num\PYGZus{}layers\PYGZcb{} refers to an}
+\PYG{l+s+sd}{            integer between `0` and `num\PYGZus{}layers \PYGZhy{} 1` (the layer index).}
+\PYG{l+s+sd}{            The keys of this dictionary are:}
+\PYG{l+s+sd}{            \PYGZhy{} `token\PYGZus{}embeddings.weight`}
+\PYG{l+s+sd}{                Token embedding matrix. Shape is (vocab\PYGZus{}size, d\PYGZus{}model).}
+\PYG{l+s+sd}{            \PYGZhy{} `layers.\PYGZob{}num\PYGZus{}layers\PYGZcb{}.attn.q\PYGZus{}proj.weight`}
+\PYG{l+s+sd}{                The query projections for all `num\PYGZus{}heads` attention heads.}
+\PYG{l+s+sd}{                Shape is (num\PYGZus{}heads * (d\PYGZus{}model / num\PYGZus{}heads), d\PYGZus{}model).}
+\PYG{l+s+sd}{                The rows are ordered by matrices of shape (num\PYGZus{}heads, d\PYGZus{}k),}
+\PYG{l+s+sd}{                so `attn.q\PYGZus{}proj.weight == torch.cat([q\PYGZus{}heads.0.weight, ..., q\PYGZus{}heads.N.weight], dim=0)`.}
+\PYG{l+s+sd}{            \PYGZhy{} `layers.\PYGZob{}num\PYGZus{}layers\PYGZcb{}.attn.k\PYGZus{}proj.weight`}
+\PYG{l+s+sd}{                The key projections for all `num\PYGZus{}heads` attention heads.}
+\PYG{l+s+sd}{                Shape is (num\PYGZus{}heads * (d\PYGZus{}model / num\PYGZus{}heads), d\PYGZus{}model).}
+\PYG{l+s+sd}{                The rows are ordered by matrices of shape (num\PYGZus{}heads, d\PYGZus{}k),}
+\PYG{l+s+sd}{                so `attn.k\PYGZus{}proj.weight == torch.cat([k\PYGZus{}heads.0.weight, ..., k\PYGZus{}heads.N.weight], dim=0)`.}
+\PYG{l+s+sd}{            \PYGZhy{} `layers.\PYGZob{}num\PYGZus{}layers\PYGZcb{}.attn.v\PYGZus{}proj.weight`}
+\PYG{l+s+sd}{                The value projections for all `num\PYGZus{}heads` attention heads.}
+\PYG{l+s+sd}{                Shape is (num\PYGZus{}heads * (d\PYGZus{}model / num\PYGZus{}heads), d\PYGZus{}model).}
+\PYG{l+s+sd}{                The rows are ordered by matrices of shape (num\PYGZus{}heads, d\PYGZus{}v),}
+\PYG{l+s+sd}{                so `attn.v\PYGZus{}proj.weight == torch.cat([v\PYGZus{}heads.0.weight, ..., v\PYGZus{}heads.N.weight], dim=0)`.}
+\PYG{l+s+sd}{            \PYGZhy{} `layers.\PYGZob{}num\PYGZus{}layers\PYGZcb{}.attn.output\PYGZus{}proj.weight`}
+\PYG{l+s+sd}{                Weight of the multi\PYGZhy{}head self\PYGZhy{}attention output projection}
+\PYG{l+s+sd}{                Shape is ((d\PYGZus{}model / num\PYGZus{}heads) * num\PYGZus{}heads, d\PYGZus{}model).}
+\PYG{l+s+sd}{            \PYGZhy{} `layers.\PYGZob{}num\PYGZus{}layers\PYGZcb{}.ln1.weight`}
+\PYG{l+s+sd}{                Weights of affine transform for the first RMSNorm}
+\PYG{l+s+sd}{                applied in the transformer block.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model,).}
+\PYG{l+s+sd}{            \PYGZhy{} `layers.\PYGZob{}num\PYGZus{}layers\PYGZcb{}.ffn.w1.weight`}
+\PYG{l+s+sd}{                Weight of the first linear transformation in the FFN.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model, d\PYGZus{}ff).}
+\PYG{l+s+sd}{            \PYGZhy{} `layers.\PYGZob{}num\PYGZus{}layers\PYGZcb{}.ffn.w2.weight`}
+\PYG{l+s+sd}{                Weight of the second linear transformation in the FFN.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}ff, d\PYGZus{}model).}
+\PYG{l+s+sd}{            \PYGZhy{} `layers.\PYGZob{}num\PYGZus{}layers\PYGZcb{}.ffn.w3.weight`}
+\PYG{l+s+sd}{                Weight of the third linear transformation in the FFN.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model, d\PYGZus{}ff).}
+\PYG{l+s+sd}{            \PYGZhy{} `layers.\PYGZob{}num\PYGZus{}layers\PYGZcb{}.ln2.weight`}
+\PYG{l+s+sd}{                Weights of affine transform for the second RMSNorm}
+\PYG{l+s+sd}{                applied in the transformer block.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model,).}
+\PYG{l+s+sd}{            \PYGZhy{} `ln\PYGZus{}final.weight`}
+\PYG{l+s+sd}{                Weights of affine transform for RMSNorm applied to the output of the final transformer block.}
+\PYG{l+s+sd}{                Shape is (d\PYGZus{}model, ).}
+\PYG{l+s+sd}{            \PYGZhy{} `lm\PYGZus{}head.weight`}
+\PYG{l+s+sd}{                Weights of the language model output embedding.}
+\PYG{l+s+sd}{                Shape is (vocab\PYGZus{}size, d\PYGZus{}model).}
+\PYG{l+s+sd}{        in\PYGZus{}indices (Int[Tensor, \PYGZdq{}batch\PYGZus{}size sequence\PYGZus{}length\PYGZdq{}]) Tensor with input indices to run the language model on. Shape is (batch\PYGZus{}size, sequence\PYGZus{}length), where}
+\PYG{l+s+sd}{            `sequence\PYGZus{}length` is at most `context\PYGZus{}length`.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}batch\PYGZus{}size sequence\PYGZus{}length vocab\PYGZus{}size\PYGZdq{}]: Tensor with the predicted unnormalized}
+\PYG{l+s+sd}{        next\PYGZhy{}word distribution for each token.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}rmsnorm}\PYG{p}{(}
+    \PYG{n}{d\PYGZus{}model}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{eps}\PYG{p}{:} \PYG{n+nb}{float}\PYG{p}{,}
+    \PYG{n}{weights}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} d\PYGZus{}model\PYGZdq{}}\PYG{p}{],}
+    \PYG{n}{in\PYGZus{}features}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... d\PYGZus{}model\PYGZdq{}}\PYG{p}{],}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ... d\PYGZus{}model\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}Given the weights of a RMSNorm affine transform,}
+\PYG{l+s+sd}{    return the output of running RMSNorm on the input features.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        d\PYGZus{}model (int): The dimensionality of the RMSNorm input.}
+\PYG{l+s+sd}{        eps: (float): A value added to the denominator for numerical stability.}
+\PYG{l+s+sd}{        weights (Float[Tensor, \PYGZdq{}d\PYGZus{}model\PYGZdq{}]): RMSNorm weights.}
+\PYG{l+s+sd}{        in\PYGZus{}features (Float[Tensor, \PYGZdq{}... d\PYGZus{}model\PYGZdq{}]): Input features to run RMSNorm on. Can have arbitrary leading}
+\PYG{l+s+sd}{            dimensions.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor,\PYGZdq{}... d\PYGZus{}model\PYGZdq{}]: Tensor of with the same shape as `in\PYGZus{}features` with the output of running}
+\PYG{l+s+sd}{        RMSNorm of the `in\PYGZus{}features`.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}silu}\PYG{p}{(}\PYG{n}{in\PYGZus{}features}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ...\PYGZdq{}}\PYG{p}{])} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ...\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}Given a tensor of inputs, return the output of applying SiLU}
+\PYG{l+s+sd}{    to each element.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        in\PYGZus{}features(Float[Tensor, \PYGZdq{}...\PYGZdq{}]): Input features to run SiLU on. Shape is arbitrary.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor,\PYGZdq{}...\PYGZdq{}]: of with the same shape as `in\PYGZus{}features` with the output of applying}
+\PYG{l+s+sd}{        SiLU to each element.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}get\PYGZus{}batch}\PYG{p}{(}
+    \PYG{n}{dataset}\PYG{p}{:} \PYG{n}{npt}\PYG{o}{.}\PYG{n}{NDArray}\PYG{p}{,} \PYG{n}{batch\PYGZus{}size}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,} \PYG{n}{context\PYGZus{}length}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,} \PYG{n}{device}\PYG{p}{:} \PYG{n+nb}{str}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n+nb}{tuple}\PYG{p}{[}\PYG{n}{torch}\PYG{o}{.}\PYG{n}{Tensor}\PYG{p}{,} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{Tensor}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given a dataset (a 1D numpy array of integers) and a desired batch size and}
+\PYG{l+s+sd}{    context length, sample language modeling input sequences and their corresponding}
+\PYG{l+s+sd}{    labels from the dataset.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        dataset (np.array): 1D numpy array of integer token IDs in the dataset.}
+\PYG{l+s+sd}{        batch\PYGZus{}size (int): Desired batch size to sample.}
+\PYG{l+s+sd}{        context\PYGZus{}length (int): Desired context length of each sampled example.}
+\PYG{l+s+sd}{        device (str): PyTorch device string (e.g., \PYGZsq{}cpu\PYGZsq{} or \PYGZsq{}cuda:0\PYGZsq{}) indicating the device}
+\PYG{l+s+sd}{            to place the sampled input sequences and labels on.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Tuple of torch.LongTensors of shape (batch\PYGZus{}size, context\PYGZus{}length). The first tuple item}
+\PYG{l+s+sd}{        is the sampled input sequences, and the second tuple item is the corresponding}
+\PYG{l+s+sd}{        language modeling labels.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}softmax}\PYG{p}{(}\PYG{n}{in\PYGZus{}features}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ...\PYGZdq{}}\PYG{p}{],} \PYG{n}{dim}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ...\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given a tensor of inputs, return the output of softmaxing the given `dim`}
+\PYG{l+s+sd}{    of the input.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        in\PYGZus{}features (Float[Tensor, \PYGZdq{}...\PYGZdq{}]): Input features to softmax. Shape is arbitrary.}
+\PYG{l+s+sd}{        dim (int): Dimension of the `in\PYGZus{}features` to apply softmax to.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}...\PYGZdq{}]: Tensor of with the same shape as `in\PYGZus{}features` with the output of}
+\PYG{l+s+sd}{        softmax normalizing the specified `dim`.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}cross\PYGZus{}entropy}\PYG{p}{(}
+    \PYG{n}{inputs}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} batch\PYGZus{}size vocab\PYGZus{}size\PYGZdq{}}\PYG{p}{],} \PYG{n}{targets}\PYG{p}{:} \PYG{n}{Int}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} batch\PYGZus{}size\PYGZdq{}}\PYG{p}{]}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}\PYGZdq{}}\PYG{p}{]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}Given a tensor of inputs and targets, compute the average cross\PYGZhy{}entropy}
+\PYG{l+s+sd}{    loss across examples.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        inputs (Float[Tensor, \PYGZdq{}batch\PYGZus{}size vocab\PYGZus{}size\PYGZdq{}]): inputs[i][j] is the}
+\PYG{l+s+sd}{            unnormalized logit of jth class for the ith example.}
+\PYG{l+s+sd}{        targets (Int[Tensor, \PYGZdq{}batch\PYGZus{}size\PYGZdq{}]): Tensor of shape (batch\PYGZus{}size,) with the index of the correct class.}
+\PYG{l+s+sd}{            Each value must be between 0 and `num\PYGZus{}classes \PYGZhy{} 1`.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}\PYGZdq{}]: The average cross\PYGZhy{}entropy loss across examples.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}gradient\PYGZus{}clipping}\PYG{p}{(}\PYG{n}{parameters}\PYG{p}{:} \PYG{n}{Iterable}\PYG{p}{[}\PYG{n}{torch}\PYG{o}{.}\PYG{n}{nn}\PYG{o}{.}\PYG{n}{Parameter}\PYG{p}{],} \PYG{n}{max\PYGZus{}l2\PYGZus{}norm}\PYG{p}{:} \PYG{n+nb}{float}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{k+kc}{None}\PYG{p}{:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}Given a set of parameters, clip their combined gradients to have l2 norm at most max\PYGZus{}l2\PYGZus{}norm.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        parameters (Iterable[torch.nn.Parameter]): collection of trainable parameters.}
+\PYG{l+s+sd}{        max\PYGZus{}l2\PYGZus{}norm (float): a positive value containing the maximum l2\PYGZhy{}norm.}
+
+\PYG{l+s+sd}{    The gradients of the parameters (parameter.grad) should be modified in\PYGZhy{}place.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{get\PYGZus{}adamw\PYGZus{}cls}\PYG{p}{()} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Any}\PYG{p}{:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Returns a torch.optim.Optimizer that implements AdamW.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}get\PYGZus{}lr\PYGZus{}cosine\PYGZus{}schedule}\PYG{p}{(}
+    \PYG{n}{it}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{max\PYGZus{}learning\PYGZus{}rate}\PYG{p}{:} \PYG{n+nb}{float}\PYG{p}{,}
+    \PYG{n}{min\PYGZus{}learning\PYGZus{}rate}\PYG{p}{:} \PYG{n+nb}{float}\PYG{p}{,}
+    \PYG{n}{warmup\PYGZus{}iters}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{cosine\PYGZus{}cycle\PYGZus{}iters}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+\PYG{p}{):}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given the parameters of a cosine learning rate decay schedule (with linear}
+\PYG{l+s+sd}{    warmup) and an iteration number, return the learning rate at the given}
+\PYG{l+s+sd}{    iteration under the specified schedule.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        it (int): Iteration number to get learning rate for.}
+\PYG{l+s+sd}{        max\PYGZus{}learning\PYGZus{}rate (float): alpha\PYGZus{}max, the maximum learning rate for}
+\PYG{l+s+sd}{            cosine learning rate schedule (with warmup).}
+\PYG{l+s+sd}{        min\PYGZus{}learning\PYGZus{}rate (float): alpha\PYGZus{}min, the minimum / final learning rate for}
+\PYG{l+s+sd}{            the cosine learning rate schedule (with warmup).}
+\PYG{l+s+sd}{        warmup\PYGZus{}iters (int): T\PYGZus{}w, the number of iterations to linearly warm\PYGZhy{}up}
+\PYG{l+s+sd}{            the learning rate.}
+\PYG{l+s+sd}{        cosine\PYGZus{}cycle\PYGZus{}iters (int): T\PYGZus{}c, the number of cosine annealing iterations.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        Learning rate at the given iteration under the specified schedule.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}save\PYGZus{}checkpoint}\PYG{p}{(}
+    \PYG{n}{model}\PYG{p}{:} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{nn}\PYG{o}{.}\PYG{n}{Module}\PYG{p}{,}
+    \PYG{n}{optimizer}\PYG{p}{:} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{optim}\PYG{o}{.}\PYG{n}{Optimizer}\PYG{p}{,}
+    \PYG{n}{iteration}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
+    \PYG{n}{out}\PYG{p}{:} \PYG{n+nb}{str} \PYG{o}{|} \PYG{n}{os}\PYG{o}{.}\PYG{n}{PathLike} \PYG{o}{|} \PYG{n}{BinaryIO} \PYG{o}{|} \PYG{n}{IO}\PYG{p}{[}\PYG{n+nb}{bytes}\PYG{p}{],}
+\PYG{p}{):}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given a model, optimizer, and an iteration number, serialize them to disk.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        model (torch.nn.Module): Serialize the state of this model.}
+\PYG{l+s+sd}{        optimizer (torch.optim.Optimizer): Serialize the state of this optimizer.}
+\PYG{l+s+sd}{        iteration (int): Serialize this value, which represents the number of training iterations}
+\PYG{l+s+sd}{            we\PYGZsq{}ve completed.}
+\PYG{l+s+sd}{        out (str | os.PathLike | BinaryIO | IO[bytes]): Path or file\PYGZhy{}like object to serialize the model, optimizer, and iteration to.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}load\PYGZus{}checkpoint}\PYG{p}{(}
+    \PYG{n}{src}\PYG{p}{:} \PYG{n+nb}{str} \PYG{o}{|} \PYG{n}{os}\PYG{o}{.}\PYG{n}{PathLike} \PYG{o}{|} \PYG{n}{BinaryIO} \PYG{o}{|} \PYG{n}{IO}\PYG{p}{[}\PYG{n+nb}{bytes}\PYG{p}{],}
+    \PYG{n}{model}\PYG{p}{:} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{nn}\PYG{o}{.}\PYG{n}{Module}\PYG{p}{,}
+    \PYG{n}{optimizer}\PYG{p}{:} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{optim}\PYG{o}{.}\PYG{n}{Optimizer}\PYG{p}{,}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n+nb}{int}\PYG{p}{:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Given a serialized checkpoint (path or file\PYGZhy{}like object), restore the}
+\PYG{l+s+sd}{    serialized state to the given model and optimizer.}
+\PYG{l+s+sd}{    Return the number of iterations that we previously serialized in}
+\PYG{l+s+sd}{    the checkpoint.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        src (str | os.PathLike | BinaryIO | IO[bytes]): Path or file\PYGZhy{}like object to serialized checkpoint.}
+\PYG{l+s+sd}{        model (torch.nn.Module): Restore the state of this model.}
+\PYG{l+s+sd}{        optimizer (torch.optim.Optimizer): Restore the state of this optimizer.}
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        int: the previously\PYGZhy{}serialized number of iterations.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+
+
+\PYG{k}{def} \PYG{n+nf}{get\PYGZus{}tokenizer}\PYG{p}{(}
+    \PYG{n}{vocab}\PYG{p}{:} \PYG{n+nb}{dict}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{,} \PYG{n+nb}{bytes}\PYG{p}{],}
+    \PYG{n}{merges}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{tuple}\PYG{p}{[}\PYG{n+nb}{bytes}\PYG{p}{,} \PYG{n+nb}{bytes}\PYG{p}{]],}
+    \PYG{n}{special\PYGZus{}tokens}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{]} \PYG{o}{|} \PYG{k+kc}{None} \PYG{o}{=} \PYG{k+kc}{None}\PYG{p}{,}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Any}\PYG{p}{:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}Given a vocabulary, a list of merges, and a list of special tokens,}
+\PYG{l+s+sd}{    return a BPE tokenizer that uses the provided vocab, merges, and special tokens.}
+
+\PYG{l+s+sd}{    Args:}
+\PYG{l+s+sd}{        vocab (dict[int, bytes]): The tokenizer vocabulary, a mapping from int (token ID in the vocabulary)}
+\PYG{l+s+sd}{            to bytes (token bytes)}
+\PYG{l+s+sd}{        merges (list[tuple[bytes, bytes]]): BPE merges. Each list item is a tuple of bytes (\PYGZlt{}token1\PYGZgt{}, \PYGZlt{}token2\PYGZgt{}),}
+\PYG{l+s+sd}{            representing that \PYGZlt{}token1\PYGZgt{} was merged with \PYGZlt{}token2\PYGZgt{}.}
+\PYG{l+s+sd}{            Merges are ordered by order of creation.}
+\PYG{l+s+sd}{        special\PYGZus{}tokens (list[str] | None): A list of string special tokens for the tokenizer. These strings will never}
+\PYG{l+s+sd}{            be split into multiple tokens, and will always be kept as a single token.}
+
+\PYG{l+s+sd}{    Returns:}
+\PYG{l+s+sd}{        A BPE tokenizer that uses the provided vocab, merges, and special tokens.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    \PYG{k}{return} \PYG{n}{Tokenizer}\PYG{p}{(}\PYG{n}{vocab}\PYG{o}{=}\PYG{n}{vocab}\PYG{p}{,} \PYG{n}{merges}\PYG{o}{=}\PYG{n}{merges}\PYG{p}{,} \PYG{n}{special\PYGZus{}tokens}\PYG{o}{=}\PYG{n}{special\PYGZus{}tokens}\PYG{p}{)}
+
+
+\PYG{k}{def} \PYG{n+nf}{run\PYGZus{}train\PYGZus{}bpe}\PYG{p}{(}
+    \PYG{n}{input\PYGZus{}path}\PYG{p}{:} \PYG{n+nb}{str}\PYG{p}{,} 
+    \PYG{n}{vocab\PYGZus{}size}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,} 
+    \PYG{n}{special\PYGZus{}tokens}\PYG{p}{:} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{str}\PYG{p}{]}
+\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n+nb}{tuple}\PYG{p}{[}\PYG{n+nb}{dict}\PYG{p}{[}\PYG{n+nb}{int}\PYG{p}{,} \PYG{n+nb}{bytes}\PYG{p}{],} \PYG{n+nb}{list}\PYG{p}{[}\PYG{n+nb}{tuple}\PYG{p}{[}\PYG{n+nb}{bytes}\PYG{p}{,} \PYG{n+nb}{bytes}\PYG{p}{]]]:}
+\PYG{+w}{    }\PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+\PYG{l+s+sd}{    Adapter function for training the BPE tokenizer.}
+\PYG{l+s+sd}{    This routes the inputs from the test suite to our optimized implementation.}
+\PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
+    
+    \PYG{c+c1}{\PYGZsh{} 直接调用核心逻辑并返回结果}
+    \PYG{n}{vocab}\PYG{p}{,} \PYG{n}{merges} \PYG{o}{=} \PYG{n}{train\PYGZus{}bpe}\PYG{p}{(}
+        \PYG{n}{input\PYGZus{}path}\PYG{o}{=}\PYG{n}{input\PYGZus{}path}\PYG{p}{,}
+        \PYG{n}{vocab\PYGZus{}size}\PYG{o}{=}\PYG{n}{vocab\PYGZus{}size}\PYG{p}{,}
+        \PYG{n}{special\PYGZus{}tokens}\PYG{o}{=}\PYG{n}{special\PYGZus{}tokens}
+    \PYG{p}{)}
+    
+    \PYG{k}{return} \PYG{n}{vocab}\PYG{p}{,} \PYG{n}{merges}
+\end{Verbatim}

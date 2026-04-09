@@ -10,6 +10,62 @@
 \input{sections/02_bpe_tokenizer.tex}
 \newpage
 
+\section{Transformer Language Model Architecture}
+
+\subsection{Transformer LM}
+
+\subsubsection{Token Embeddings}
+
+\subsubsection{Pre-norm Transformer Block}
+
+\subsection{Output Normalization and Embedding}
+
+\subsection{Remark: Batching, Einsum and Eﬀicient Computation}
+
+\subsubsection{Mathematical Notation and Memory Ordering}
+
+\subsection{Basic Building Blocks: Linear and Embedding Modules}
+
+\subsubsection{Parameter Initialization}
+
+\subsubsection{Linear Module}
+
+\begin{problembox}{linear}{Implementing the linear module \hfill (1 point)}
+
+    \textbf{Deliverable:} Implement a \texttt{Linear} class that inherits from \texttt{torch.nn.Module} and performs a linear transformation. Your implementation should follow the interface of PyTorch's built-in \texttt{nn.Linear} module, except for not having a \texttt{bias} argument or parameter. We recommend the following interface:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=1em, parsep=0pt]
+
+        \item \mintinline{python}{def __init__(self, in_features, out_features, device=None, dtype=None)} Construct a linear transformation module. This function should accept the following parameters:
+
+              \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                  \item \texttt{in\_features}: \textcolor{green!50!black}{\texttt{int}} final dimension of the input
+                  \item \texttt{out\_features}: \textcolor{green!50!black}{\texttt{int}} final dimension of the output
+                  \item \texttt{device}: \textcolor{green!50!black}{\texttt{torch.device | None = None}} Device to store the parameters on
+                  \item \texttt{dtype}: \textcolor{green!50!black}{\texttt{torch.dtype | None = None}} Data type of the parameters
+              \end{itemize}
+
+        \item \mintinline{python}{def forward(self, x: torch.Tensor) -> torch.Tensor} Apply the linear transformation to the input.
+
+    \end{itemize}
+
+    Make sure to:
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item subclass \texttt{nn.Module}
+        \item call the superclass constructor
+        \item construct and store your parameter as $W$ (not $W^\top$) for memory ordering reasons, putting it in an \texttt{nn.Parameter}
+        \item of course, don't use \texttt{nn.Linear} or \texttt{nn.functional.linear}
+    \end{itemize}
+
+    \vspace{0.5em}
+    For initializations, use the settings from above along with \texttt{torch.nn.init.trunc\_normal\_} to initialize the weights.
+
+    To test your \texttt{Linear} module, implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_linear]}}. The adapter should load the given weights into your \texttt{Linear} module. You can use \texttt{Module.load\_state\_dict} for this purpose. Then, run \texttt{uv run pytest -k test\_linear}.
+
+\end{problembox}
+
+\newpage
+
 \input{sections/99_appendix.tex}
 
 \end{document}

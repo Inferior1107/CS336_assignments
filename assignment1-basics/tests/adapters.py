@@ -16,6 +16,7 @@ import pickle
 
 from cs336_basics.test_function.bpe_trainer import train_bpe
 from cs336_basics.test_function.tokenizer import Tokenizer
+from cs336_basics.Chap_2.linear import Linear
 
 def run_linear(
     d_in: int,
@@ -36,7 +37,20 @@ def run_linear(
         Float[Tensor, "... d_out"]: The transformed output of your linear module.
     """
 
-    raise NotImplementedError
+    model = Linear(
+        in_features=d_in,
+        out_features=d_out,
+        device=in_features.device,
+        dtype=in_features.dtype,
+    )
+
+    model.load_state_dict({"W": weights}, strict=True)
+
+    model.eval()
+    with torch.no_grad():
+        output = model(in_features)
+    
+    return output
 
 
 def run_embedding(

@@ -21,11 +21,21 @@
 \@writefile{toc}{\contentsline {paragraph}{Memory considerations.}{7}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsubsection}{\numberline {2.6.2}Decoding text}{7}{}\protected@file@percent }
 \@writefile{toc}{\contentsline {subsection}{\numberline {2.7}Experiments}{8}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {A}Complete Source Code}{9}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Fast BPE Implementation (Rust)}{9}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.2}Python BPE Trainer}{12}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.3}Tokenizer}{16}{}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {A.4}Adapters}{19}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Transformer Language Model Architecture}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Transformer LM}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.1}Token Embeddings}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.1.2}Pre-norm Transformer Block}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Output Normalization and Embedding}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Remark: Batching, Einsum and Eﬀicient Computation}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.3.1}Mathematical Notation and Memory Ordering}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Basic Building Blocks: Linear and Embedding Modules}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.4.1}Parameter Initialization}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsubsection}{\numberline {3.4.2}Linear Module}{9}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {A}Complete Source Code}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Fast BPE Implementation (Rust)}{10}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.2}Python BPE Trainer}{13}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.3}Tokenizer}{17}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.4}Adapters}{20}{}\protected@file@percent }
 \gdef\minted@oldcachelist{,
   default.pygstyle,
   6CB8F1F5AAB96C69F61C63515EFF176C541C68F80C6A6F06151AFD63BAE50EBC.pygtex,
@@ -44,8 +54,10 @@
   75D707958EC645186268E7ED3C73CDE5377D2AA7CAC59F8F10B4B3E16FE511A1.pygtex,
   B27B7C6FA16C50EB942E0F3EBB8060A7541C68F80C6A6F06151AFD63BAE50EBC.pygtex,
   8984D143A032B27920D6E53C4BFAC13D541C68F80C6A6F06151AFD63BAE50EBC.pygtex,
+  1BFB78E70ECB09D80F36A69B4E1F8C46541C68F80C6A6F06151AFD63BAE50EBC.pygtex,
+  C792C082AB9BE23CD564D4F92454509E541C68F80C6A6F06151AFD63BAE50EBC.pygtex,
   29F244B2B11183732CBD3FB99CBB5EF2627F0E119DCF38D86EA268CD744AB745.pygtex,
   7B27C4854C1E0C656909387A5CCC8ED9EBE515C6F385C182F5FF25B384DF7596.pygtex,
   0A6899EBB7FD2F22E0AE59E053A50927915858D6161727FC8421BD2BAE22FBDA.pygtex,
-  D1FC69841E0AC7A0F98DA66918E646D8589114A72FF8C8BC1B01852682525526.pygtex}
-\gdef \@abspage@last{29}
+  9E0127DEFC40CE823B5D17C02C725FAE589114A72FF8C8BC1B01852682525526.pygtex}
+\gdef \@abspage@last{30}

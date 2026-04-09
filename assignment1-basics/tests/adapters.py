@@ -17,6 +17,7 @@ import pickle
 from cs336_basics.test_function.bpe_trainer import train_bpe
 from cs336_basics.test_function.tokenizer import Tokenizer
 from cs336_basics.Chap_2.linear import Linear
+from cs336_basics.Chap_2.embedding import Embedding
 
 def run_linear(
     d_in: int,
@@ -72,7 +73,20 @@ def run_embedding(
         Float[Tensor, "... d_model"]: Batch of embeddings returned by your Embedding layer.
     """
 
-    raise NotImplementedError
+    model = Embedding(
+        num_embeddings=vocab_size,
+        embedding_dim=d_model,
+        device=weights.device,
+        dtype=weights.dtype
+    )
+
+    model.load_state_dict({"weight": weights}, strict=True)
+
+    model.eval()
+    with torch.no_grad():
+        output = model(token_ids)
+        
+    return output
 
 
 def run_swiglu(

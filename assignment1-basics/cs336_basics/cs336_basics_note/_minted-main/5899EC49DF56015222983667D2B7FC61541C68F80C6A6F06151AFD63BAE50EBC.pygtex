@@ -1,0 +1,3 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYG{k}{def} \PYG{n+nf+fm}{\PYGZus{}\PYGZus{}init\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{num\PYGZus{}embeddings}\PYG{p}{,} \PYG{n}{embedding\PYGZus{}dim}\PYG{p}{,} \PYG{n}{device}\PYG{o}{=}\PYG{k+kc}{None}\PYG{p}{,} \PYG{n}{dtype}\PYG{o}{=}\PYG{k+kc}{None}\PYG{p}{)}
+\end{Verbatim}

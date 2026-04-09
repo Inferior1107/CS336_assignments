@@ -58,11 +58,51 @@
     \end{itemize}
 
     \vspace{0.5em}
-    For initializations, use the settings from above along with \texttt{torch.nn.init.trunc\_normal\_} to initialize the weights.
 
-    To test your \texttt{Linear} module, implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_linear]}}. The adapter should load the given weights into your \texttt{Linear} module. You can use \texttt{Module.load\_state\_dict} for this purpose. Then, run \texttt{uv run pytest -k test\_linear}.
+    Code below;
 
 \end{problembox}
+
+\subsubsection{Embedding Module}
+
+\begin{problembox}{embedding}{Implement the embedding module \hfill (1 point)}
+
+    \textbf{Deliverable:} Implement the \texttt{Embedding} class that inherits from \texttt{torch.nn.Module} and performs an embedding lookup. Your implementation should follow the interface of PyTorch's built-in \texttt{nn.Embedding} module. We recommend the following interface:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=1em, parsep=0pt]
+
+        \item \mintinline{python}{def __init__(self, num_embeddings, embedding_dim, device=None, dtype=None)} \\
+              Construct an embedding module. This function should accept the following parameters:
+
+              \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                  \item \texttt{num\_embeddings}: \textcolor{green!50!black}{\texttt{int}} Size of the vocabulary
+                  \item \texttt{embedding\_dim}: \textcolor{green!50!black}{\texttt{int}} Dimension of the embedding vectors, i.e., $d_{\mathrm{model}}$
+                  \item \texttt{device}: \textcolor{green!50!black}{\texttt{torch.device | None = None}} Device to store the parameters on
+                  \item \texttt{dtype}: \textcolor{green!50!black}{\texttt{torch.dtype | None = None}} Data type of the parameters
+              \end{itemize}
+
+        \item \mintinline{python}{def forward(self, token_ids: torch.Tensor) -> torch.Tensor} \\
+              Lookup the embedding vectors for the given token IDs.
+
+    \end{itemize}
+
+    Make sure to:
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item subclass \texttt{nn.Module}
+        \item call the superclass constructor
+        \item initialize your embedding matrix as a \texttt{nn.Parameter}
+        \item store the embedding matrix with the \texttt{d\_model} being the final dimension
+        \item of course, don't use \texttt{nn.Embedding} or \texttt{nn.functional.embedding}
+    \end{itemize}
+
+    \vspace{0.5em}
+    Again, use the settings from above for initialization, and use \texttt{torch.nn.init.trunc\_normal\_} to initialize the weights.
+
+    To test your implementation, implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_embedding]}}. Then, run \texttt{uv run pytest -k test\_embedding}.
+
+\end{problembox}
+
+\subsection{Pre-Norm Transformer Block}
 
 \newpage
 

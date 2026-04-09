@@ -18,6 +18,7 @@
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.test\PYGZus{}function.bpe\PYGZus{}trainer} \PYG{k+kn}{import} \PYG{n}{train\PYGZus{}bpe}
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.test\PYGZus{}function.tokenizer} \PYG{k+kn}{import} \PYG{n}{Tokenizer}
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.linear} \PYG{k+kn}{import} \PYG{n}{Linear}
+\PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.embedding} \PYG{k+kn}{import} \PYG{n}{Embedding}
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}linear}\PYG{p}{(}
     \PYG{n}{d\PYGZus{}in}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
@@ -73,7 +74,20 @@
 \PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}... d\PYGZus{}model\PYGZdq{}]: Batch of embeddings returned by your Embedding layer.}
 \PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
 
-    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+    \PYG{n}{model} \PYG{o}{=} \PYG{n}{Embedding}\PYG{p}{(}
+        \PYG{n}{num\PYGZus{}embeddings}\PYG{o}{=}\PYG{n}{vocab\PYGZus{}size}\PYG{p}{,}
+        \PYG{n}{embedding\PYGZus{}dim}\PYG{o}{=}\PYG{n}{d\PYGZus{}model}\PYG{p}{,}
+        \PYG{n}{device}\PYG{o}{=}\PYG{n}{weights}\PYG{o}{.}\PYG{n}{device}\PYG{p}{,}
+        \PYG{n}{dtype}\PYG{o}{=}\PYG{n}{weights}\PYG{o}{.}\PYG{n}{dtype}
+    \PYG{p}{)}
+
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{load\PYGZus{}state\PYGZus{}dict}\PYG{p}{(\PYGZob{}}\PYG{l+s+s2}{\PYGZdq{}weight\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{\PYGZcb{},} \PYG{n}{strict}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{eval}\PYG{p}{()}
+    \PYG{k}{with} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{no\PYGZus{}grad}\PYG{p}{():}
+        \PYG{n}{output} \PYG{o}{=} \PYG{n}{model}\PYG{p}{(}\PYG{n}{token\PYGZus{}ids}\PYG{p}{)}
+        
+    \PYG{k}{return} \PYG{n}{output}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}swiglu}\PYG{p}{(}

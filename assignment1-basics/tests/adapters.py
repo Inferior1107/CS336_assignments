@@ -19,6 +19,7 @@ from cs336_basics.test_function.tokenizer import Tokenizer
 from cs336_basics.Chap_2.linear import Linear
 from cs336_basics.Chap_2.embedding import Embedding
 from cs336_basics.Chap_2.rmsnorm import RMSNorm
+from cs336_basics.Chap_2.swiglu import SwiGLU
 
 def run_linear(
     d_in: int,
@@ -119,7 +120,25 @@ def run_swiglu(
     # swiglu.w1.weight.data = w1_weight
     # swiglu.w2.weight.data = w2_weight
     # swiglu.w3.weight.data = w3_weight
-    raise NotImplementedError
+    model = SwiGLU(
+        d_model=d_model,
+        d_ff=d_ff,
+        device=in_features.device,
+        dtype=in_features.dtype
+    )
+
+    state_dict = {
+        "w1.W": w1_weight,
+        "w2.W": w2_weight,
+        "w3.W": w3_weight
+    }
+    model.load_state_dict(state_dict, strict=True)
+
+    model.eval()
+    with torch.no_grad():
+        output = model(in_features)
+        
+    return output
 
 
 def run_scaled_dot_product_attention(

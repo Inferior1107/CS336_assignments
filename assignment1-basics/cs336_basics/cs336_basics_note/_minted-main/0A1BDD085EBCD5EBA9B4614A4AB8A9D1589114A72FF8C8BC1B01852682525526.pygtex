@@ -19,6 +19,8 @@
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.test\PYGZus{}function.tokenizer} \PYG{k+kn}{import} \PYG{n}{Tokenizer}
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.linear} \PYG{k+kn}{import} \PYG{n}{Linear}
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.embedding} \PYG{k+kn}{import} \PYG{n}{Embedding}
+\PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.rmsnorm} \PYG{k+kn}{import} \PYG{n}{RMSNorm}
+\PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.swiglu} \PYG{k+kn}{import} \PYG{n}{SwiGLU}
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}linear}\PYG{p}{(}
     \PYG{n}{d\PYGZus{}in}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
@@ -119,7 +121,25 @@
     \PYG{c+c1}{\PYGZsh{} swiglu.w1.weight.data = w1\PYGZus{}weight}
     \PYG{c+c1}{\PYGZsh{} swiglu.w2.weight.data = w2\PYGZus{}weight}
     \PYG{c+c1}{\PYGZsh{} swiglu.w3.weight.data = w3\PYGZus{}weight}
-    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+    \PYG{n}{model} \PYG{o}{=} \PYG{n}{SwiGLU}\PYG{p}{(}
+        \PYG{n}{d\PYGZus{}model}\PYG{o}{=}\PYG{n}{d\PYGZus{}model}\PYG{p}{,}
+        \PYG{n}{d\PYGZus{}ff}\PYG{o}{=}\PYG{n}{d\PYGZus{}ff}\PYG{p}{,}
+        \PYG{n}{device}\PYG{o}{=}\PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{device}\PYG{p}{,}
+        \PYG{n}{dtype}\PYG{o}{=}\PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{dtype}
+    \PYG{p}{)}
+
+    \PYG{n}{state\PYGZus{}dict} \PYG{o}{=} \PYG{p}{\PYGZob{}}
+        \PYG{l+s+s2}{\PYGZdq{}w1.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{w1\PYGZus{}weight}\PYG{p}{,}
+        \PYG{l+s+s2}{\PYGZdq{}w2.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{w2\PYGZus{}weight}\PYG{p}{,}
+        \PYG{l+s+s2}{\PYGZdq{}w3.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{w3\PYGZus{}weight}
+    \PYG{p}{\PYGZcb{}}
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{load\PYGZus{}state\PYGZus{}dict}\PYG{p}{(}\PYG{n}{state\PYGZus{}dict}\PYG{p}{,} \PYG{n}{strict}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{eval}\PYG{p}{()}
+    \PYG{k}{with} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{no\PYGZus{}grad}\PYG{p}{():}
+        \PYG{n}{output} \PYG{o}{=} \PYG{n}{model}\PYG{p}{(}\PYG{n}{in\PYGZus{}features}\PYG{p}{)}
+        
+    \PYG{k}{return} \PYG{n}{output}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}scaled\PYGZus{}dot\PYGZus{}product\PYGZus{}attention}\PYG{p}{(}
@@ -414,7 +434,20 @@
 \PYG{l+s+sd}{        Float[Tensor,\PYGZdq{}... d\PYGZus{}model\PYGZdq{}]: Tensor of with the same shape as `in\PYGZus{}features` with the output of running}
 \PYG{l+s+sd}{        RMSNorm of the `in\PYGZus{}features`.}
 \PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
-    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+    \PYG{n}{model} \PYG{o}{=} \PYG{n}{RMSNorm}\PYG{p}{(}
+        \PYG{n}{d\PYGZus{}model}\PYG{o}{=}\PYG{n}{d\PYGZus{}model}\PYG{p}{,}
+        \PYG{n}{eps}\PYG{o}{=}\PYG{n}{eps}\PYG{p}{,}
+        \PYG{n}{device}\PYG{o}{=}\PYG{n}{weights}\PYG{o}{.}\PYG{n}{device}\PYG{p}{,}
+        \PYG{n}{dtype}\PYG{o}{=}\PYG{n}{weights}\PYG{o}{.}\PYG{n}{dtype}
+    \PYG{p}{)}
+
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{load\PYGZus{}state\PYGZus{}dict}\PYG{p}{(\PYGZob{}}\PYG{l+s+s2}{\PYGZdq{}weight\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{\PYGZcb{},} \PYG{n}{strict}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{eval}\PYG{p}{()}
+    \PYG{k}{with} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{no\PYGZus{}grad}\PYG{p}{():}
+        \PYG{n}{output} \PYG{o}{=} \PYG{n}{model}\PYG{p}{(}\PYG{n}{in\PYGZus{}features}\PYG{p}{)}
+        
+    \PYG{k}{return} \PYG{n}{output}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}silu}\PYG{p}{(}\PYG{n}{in\PYGZus{}features}\PYG{p}{:} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ...\PYGZdq{}}\PYG{p}{])} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n}{Float}\PYG{p}{[}\PYG{n}{Tensor}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{} ...\PYGZdq{}}\PYG{p}{]:}

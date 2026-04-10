@@ -104,6 +104,50 @@
 
 \subsection{Pre-Norm Transformer Block}
 
+\subsubsection{Root Mean Square Layer Normalization}
+
+\begin{problembox}{rmsnorm}{Root Mean Square Layer Normalization (1 point)}
+
+    \textbf{Deliverable:} Implement RMSNorm as a \texttt{torch.nn.Module}. We recommend the following interface:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=1em, parsep=0pt]
+
+        \item \mintinline{python}{def __init__(self, d_model: int, eps: float = 1e-5, device=None, dtype=None)} \\
+              Construct the RMSNorm module. This function should accept the following parameters:
+
+              \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                  \item \texttt{d\_model}: \textcolor{green!50!black}{\texttt{int}} Hidden dimension of the model
+                  \item \texttt{eps}: \textcolor{green!50!black}{\texttt{float = 1e-5}} Epsilon value for numerical stability
+                  \item \texttt{device}: \textcolor{green!50!black}{\texttt{torch.device | None = None}} Device to store the parameters on
+                  \item \texttt{dtype}: \textcolor{green!50!black}{\texttt{torch.dtype | None = None}} Data type of the parameters
+              \end{itemize}
+
+        \item \mintinline{python}{def forward(self, x: torch.Tensor) -> torch.Tensor} \\
+              Process an input tensor of shape \texttt{(batch\_size, sequence\_length, d\_model)} and return a tensor of the same shape.
+
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{Note:} Remember to upcast your input to \texttt{torch.float32} before performing the normalization (and later downcast to the original dtype), as described above.
+
+    To test your implementation, implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_rmsnorm]}}. Then, run \texttt{uv run pytest -k test\_rmsnorm}.
+
+\end{problembox}
+
+\subsubsection{Position-Wise Feed-Forward Network}
+
+\begin{problembox}{positionwise\_feedforward}{Implement the position-wise feed-forward network (2 points)}
+
+    \textbf{Deliverable:} \quad Implement the SwiGLU feed-forward network, composed of a SiLU activation function and a GLU.
+
+    \vspace{0.5em}
+    \textbf{Note:} in this particular case, you should feel free to use \texttt{torch.sigmoid} in your implementation for numerical stability.
+
+    \vspace{0.5em}
+    You should set $d_{\mathrm{ff}}$ to approximately $\frac{8}{3} \times d_{\mathrm{model}}$ in your implementation, while ensuring that the dimensionality of the inner feed-forward layer is a multiple of 64 to make good use of your hardware. To test your implementation against our provided tests, you will need to implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_swiglu]}}. Then, run \texttt{uv run pytest -k test\_swiglu} to test your implementation.
+
+\end{problembox}
+
 \newpage
 
 \input{sections/99_appendix.tex}

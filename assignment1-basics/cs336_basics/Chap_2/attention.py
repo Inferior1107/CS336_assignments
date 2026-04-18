@@ -54,7 +54,7 @@ class MultiHeadAttention(nn.Module):
         # 3. 缩放点积打分 (Scaled Dot-Product)
         # @ 运算符会自动处理前面所有的 batch 和 head 维度，只在最后两维做矩阵乘法
         # 形状变化: Q(... h, seq_len, d) @ K^T(... h, d, seq_len) -> (... h, seq_len, seq_len)
-        scores = (Q @ K.transpose(-2, -1)) / math.sqrt(self.d_k)
+        scores = einx.dot('... h s_q d, ... h s_k d -> ... h s_q s_k', Q, K) / math.sqrt(self.d_k)
 
         # 4. 因果掩码 (Causal Mask)
         # 生成下三角矩阵：左下角是 True (允许看)，右上角是 False (禁止偷看未来)
@@ -63,7 +63,7 @@ class MultiHeadAttention(nn.Module):
 
         # 5. Softmax 归一化与提取 Value
         attn_weights = torch.softmax(scores, dim=-1)
-        out = attn_weights @ V  # 形状: (... h, seq_len, d_v)
+        out = einx.dot('... h s_q s_k, ... h s_k d_v -> ... h s_q d_v', attn_weights, V)
 
         # 6. 缝合 (Concatenate Heads)
         # 把并行的头重新拼回 d_model 维度

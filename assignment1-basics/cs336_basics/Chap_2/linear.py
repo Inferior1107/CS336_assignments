@@ -25,6 +25,8 @@ class Linear(nn.Module):
         self.init_weights()
     
     def init_weights(self) -> None:
+        # Xavier Normal
+        # 
         sigma = math.sqrt(2.0 / (self.in_features + self.out_features))
 
         nn.init.trunc_normal_(

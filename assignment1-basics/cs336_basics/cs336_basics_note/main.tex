@@ -236,6 +236,23 @@
 
 \end{problembox}
 
+\begin{problembox}{transformer\_lm}{Implementing the Transformer LM  (3 points)}
+
+    Time to put it all together! Implement the Transformer language model as described in \S 3.1 and illustrated in Figure 1. At minimum, your implementation should accept all the aforementioned construction parameters for the Transformer block, as well as these additional parameters:
+
+    \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \texttt{vocab\_size}: \textcolor{green!50!black}{\texttt{int}} The size of the vocabulary, necessary for determining the dimensionality of the token embedding matrix.
+        \item \texttt{context\_length}: \textcolor{green!50!black}{\texttt{int}} The maximum context length, necessary for determining the dimensionality of the position embedding matrix.
+        \item \texttt{num\_layers}: \textcolor{green!50!black}{\texttt{int}} The number of Transformer blocks to use.
+    \end{itemize}
+
+    \vspace{0.5em}
+    To test your implementation against our provided tests, you will first need to implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_transformer\_lm]}}. Then, run \texttt{uv run pytest -k test\_transformer\_lm} to test your implementation.
+
+    \textbf{Deliverable:} A Transformer LM module that passes the above tests.
+
+\end{problembox}
+
 \newpage
 
 \input{sections/99_appendix.tex}

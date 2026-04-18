@@ -203,7 +203,38 @@
 
 \subsubsection{Causal Multi-Head Self-Attention}
 
+\begin{problembox}{multihead\_self\_attention}{\newline Implement causal multi-head self-attention (5 points)}
 
+    \textbf{Deliverable:} \quad Implement causal multi-head self-attention as a \texttt{torch.nn.Module}. Your implementation should accept (at least) the following parameters:
+
+    \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \texttt{d\_model}: \textcolor{green!50!black}{\texttt{int}} Dimensionality of the Transformer block inputs.
+        \item \texttt{num\_heads}: \textcolor{green!50!black}{\texttt{int}} Number of heads to use in multi-head self-attention.
+    \end{itemize}
+
+    \vspace{0.5em}
+    Following Vaswani et al. [2017], set $d_k = d_v = d_{\mathrm{model}}/h$. \newline To test your implementation against our provided tests, implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_multihead\_self\_attention]}}. Then, run \texttt{uv run pytest -k test\_multihead\_self\_attention} to test your implementation.
+
+\end{problembox}
+
+\subsection{The Full Transformer LM}
+
+\begin{problembox}{transformer\_block}{Implement the Transformer block (3 points)}
+
+    Implement the pre-norm Transformer block as described in \S 3.5 and illustrated in Figure 2. Your Transformer block should accept (at least) the following parameters.
+
+    \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \texttt{d\_model}: \textcolor{green!50!black}{\texttt{int}} Dimensionality of the Transformer block inputs.
+        \item \texttt{num\_heads}: \textcolor{green!50!black}{\texttt{int}} Number of heads to use in multi-head self-attention.
+        \item \texttt{d\_ff}: \textcolor{green!50!black}{\texttt{int}} Dimensionality of the position-wise feed-forward inner layer.
+    \end{itemize}
+
+    \vspace{0.5em}
+    To test your implementation, implement the adapter \textcolor{red!80!black}{\texttt{[adapters.run\_transformer\_block]}}. Then run \texttt{uv run pytest -k test\_transformer\_block} to test your implementation.
+
+    \textbf{Deliverable:} Transformer block code that passes the provided tests.
+
+\end{problembox}
 
 \newpage
 

@@ -26,6 +26,8 @@
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.swiglu} \PYG{k+kn}{import} \PYG{n}{SwiGLU}
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.rope} \PYG{k+kn}{import} \PYG{n}{RotaryPositionalEmbedding}
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.attention} \PYG{k+kn}{import} \PYG{n}{MultiHeadAttention}
+\PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.transformer} \PYG{k+kn}{import} \PYG{n}{TransformerBlock}
+\PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.language\PYGZus{}model} \PYG{k+kn}{import} \PYG{n}{TransformerLM}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}linear}\PYG{p}{(}
@@ -436,7 +438,38 @@
 \PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}batch sequence\PYGZus{}length d\PYGZus{}model\PYGZdq{}] Tensor with the output of}
 \PYG{l+s+sd}{        running the Transformer block on the input features while using RoPE.}
 \PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
-    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+    \PYG{c+c1}{\PYGZsh{} 1. 实例化}
+    \PYG{n}{block} \PYG{o}{=} \PYG{n}{TransformerBlock}\PYG{p}{(}
+        \PYG{n}{d\PYGZus{}model}\PYG{o}{=}\PYG{n}{d\PYGZus{}model}\PYG{p}{,}
+        \PYG{n}{num\PYGZus{}heads}\PYG{o}{=}\PYG{n}{num\PYGZus{}heads}\PYG{p}{,}
+        \PYG{n}{d\PYGZus{}ff}\PYG{o}{=}\PYG{n}{d\PYGZus{}ff}\PYG{p}{,}
+        \PYG{n}{max\PYGZus{}seq\PYGZus{}len}\PYG{o}{=}\PYG{n}{max\PYGZus{}seq\PYGZus{}len}\PYG{p}{,}
+        \PYG{n}{theta}\PYG{o}{=}\PYG{n}{theta}\PYG{p}{,}
+        \PYG{n}{device}\PYG{o}{=}\PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{device}\PYG{p}{,}
+        \PYG{n}{dtype}\PYG{o}{=}\PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{dtype}
+    \PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} 2. 权重映射}
+    \PYG{n}{state\PYGZus{}dict} \PYG{o}{=} \PYG{p}{\PYGZob{}}
+        \PYG{l+s+s2}{\PYGZdq{}ln1.weight\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}ln1.weight\PYGZdq{}}\PYG{p}{],}
+        \PYG{l+s+s2}{\PYGZdq{}attn.q\PYGZus{}proj.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}attn.q\PYGZus{}proj.weight\PYGZdq{}}\PYG{p}{],}
+        \PYG{l+s+s2}{\PYGZdq{}attn.k\PYGZus{}proj.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}attn.k\PYGZus{}proj.weight\PYGZdq{}}\PYG{p}{],}
+        \PYG{l+s+s2}{\PYGZdq{}attn.v\PYGZus{}proj.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}attn.v\PYGZus{}proj.weight\PYGZdq{}}\PYG{p}{],}
+        \PYG{l+s+s2}{\PYGZdq{}attn.o\PYGZus{}proj.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}attn.output\PYGZus{}proj.weight\PYGZdq{}}\PYG{p}{],}
+        \PYG{l+s+s2}{\PYGZdq{}ln2.weight\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}ln2.weight\PYGZdq{}}\PYG{p}{],}
+        \PYG{l+s+s2}{\PYGZdq{}ffn.w1.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}ffn.w1.weight\PYGZdq{}}\PYG{p}{],}
+        \PYG{l+s+s2}{\PYGZdq{}ffn.w2.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}ffn.w2.weight\PYGZdq{}}\PYG{p}{],}
+        \PYG{l+s+s2}{\PYGZdq{}ffn.w3.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{weights}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}ffn.w3.weight\PYGZdq{}}\PYG{p}{],}
+    \PYG{p}{\PYGZcb{}}
+
+    \PYG{c+c1}{\PYGZsh{} 3. 加载与推理}
+    \PYG{n}{block}\PYG{o}{.}\PYG{n}{load\PYGZus{}state\PYGZus{}dict}\PYG{p}{(}\PYG{n}{state\PYGZus{}dict}\PYG{p}{,} \PYG{n}{strict}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+    \PYG{n}{block}\PYG{o}{.}\PYG{n}{eval}\PYG{p}{()}
+    
+    \PYG{k}{with} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{no\PYGZus{}grad}\PYG{p}{():}
+        \PYG{n}{output} \PYG{o}{=} \PYG{n}{block}\PYG{p}{(}\PYG{n}{in\PYGZus{}features}\PYG{p}{)}
+        
+    \PYG{k}{return} \PYG{n}{output}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}transformer\PYGZus{}lm}\PYG{p}{(}
@@ -518,7 +551,77 @@
 \PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}batch\PYGZus{}size sequence\PYGZus{}length vocab\PYGZus{}size\PYGZdq{}]: Tensor with the predicted unnormalized}
 \PYG{l+s+sd}{        next\PYGZhy{}word distribution for each token.}
 \PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
-    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+    \PYG{c+c1}{\PYGZsh{} 1. 实例化完整的语言模型}
+    \PYG{n}{model} \PYG{o}{=} \PYG{n}{TransformerLM}\PYG{p}{(}
+        \PYG{n}{vocab\PYGZus{}size}\PYG{o}{=}\PYG{n}{vocab\PYGZus{}size}\PYG{p}{,}
+        \PYG{n}{context\PYGZus{}length}\PYG{o}{=}\PYG{n}{context\PYGZus{}length}\PYG{p}{,}
+        \PYG{n}{num\PYGZus{}layers}\PYG{o}{=}\PYG{n}{num\PYGZus{}layers}\PYG{p}{,}
+        \PYG{n}{d\PYGZus{}model}\PYG{o}{=}\PYG{n}{d\PYGZus{}model}\PYG{p}{,}
+        \PYG{n}{num\PYGZus{}heads}\PYG{o}{=}\PYG{n}{num\PYGZus{}heads}\PYG{p}{,}
+        \PYG{n}{d\PYGZus{}ff}\PYG{o}{=}\PYG{n}{d\PYGZus{}ff}\PYG{p}{,}
+        \PYG{n}{theta}\PYG{o}{=}\PYG{n}{rope\PYGZus{}theta}\PYG{p}{,}  \PYG{c+c1}{\PYGZsh{} 把外部的 rope\PYGZus{}theta 传给内部需要的 theta}
+        \PYG{n}{device}\PYG{o}{=}\PYG{n}{in\PYGZus{}indices}\PYG{o}{.}\PYG{n}{device}\PYG{p}{,} \PYG{c+c1}{\PYGZsh{} 使用 in\PYGZus{}indices 所在的设备}
+    \PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} 2. 疯狂的权重重映射 (The Great Weight Remapping)}
+    \PYG{n}{state\PYGZus{}dict} \PYG{o}{=} \PYG{p}{\PYGZob{}\PYGZcb{}}
+    
+    \PYG{k}{for} \PYG{n}{key}\PYG{p}{,} \PYG{n}{tensor} \PYG{o+ow}{in} \PYG{n}{weights}\PYG{o}{.}\PYG{n}{items}\PYG{p}{():}
+        \PYG{c+c1}{\PYGZsh{} A. 映射 Embedding (老师的键有 \PYGZsq{}s\PYGZsq{}：token\PYGZus{}embeddings)}
+        \PYG{k}{if} \PYG{n}{key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}token\PYGZus{}embeddings.weight\PYGZdq{}}\PYG{p}{:}
+            \PYG{n}{state\PYGZus{}dict}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}token\PYGZus{}embedding.weight\PYGZdq{}}\PYG{p}{]} \PYG{o}{=} \PYG{n}{tensor}
+            
+        \PYG{c+c1}{\PYGZsh{} B. 映射最后的 RMSNorm (老师的键叫 ln\PYGZus{}final)}
+        \PYG{k}{elif} \PYG{n}{key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}ln\PYGZus{}final.weight\PYGZdq{}}\PYG{p}{:}
+            \PYG{n}{state\PYGZus{}dict}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}final\PYGZus{}norm.weight\PYGZdq{}}\PYG{p}{]} \PYG{o}{=} \PYG{n}{tensor}
+            
+        \PYG{c+c1}{\PYGZsh{} C. 映射输出预测头 LM Head}
+        \PYG{k}{elif} \PYG{n}{key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}output.weight\PYGZdq{}}\PYG{p}{:}
+            \PYG{n}{state\PYGZus{}dict}\PYG{p}{[}\PYG{l+s+s2}{\PYGZdq{}lm\PYGZus{}head.weight\PYGZdq{}}\PYG{p}{]} \PYG{o}{=} \PYG{n}{tensor}
+            
+        \PYG{c+c1}{\PYGZsh{} D. 动态映射所有的 Transformer Layers (0, 1, 2... n)}
+        \PYG{k}{elif} \PYG{n}{key}\PYG{o}{.}\PYG{n}{startswith}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}layers.\PYGZdq{}}\PYG{p}{):}
+            \PYG{n}{parts} \PYG{o}{=} \PYG{n}{key}\PYG{o}{.}\PYG{n}{split}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}.\PYGZdq{}}\PYG{p}{)}
+            \PYG{n}{layer\PYGZus{}idx} \PYG{o}{=} \PYG{n}{parts}\PYG{p}{[}\PYG{l+m+mi}{1}\PYG{p}{]}  
+            \PYG{n}{sub\PYGZus{}key} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}.\PYGZdq{}}\PYG{o}{.}\PYG{n}{join}\PYG{p}{(}\PYG{n}{parts}\PYG{p}{[}\PYG{l+m+mi}{2}\PYG{p}{:])}  
+            
+            \PYG{k}{if} \PYG{n}{sub\PYGZus{}key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}ln1.weight\PYGZdq{}}\PYG{p}{:}
+                \PYG{n}{new\PYGZus{}sub\PYGZus{}key} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}ln1.weight\PYGZdq{}}
+            \PYG{k}{elif} \PYG{n}{sub\PYGZus{}key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}attn.q\PYGZus{}proj.weight\PYGZdq{}}\PYG{p}{:}
+                \PYG{n}{new\PYGZus{}sub\PYGZus{}key} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}attn.q\PYGZus{}proj.W\PYGZdq{}}
+            \PYG{k}{elif} \PYG{n}{sub\PYGZus{}key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}attn.k\PYGZus{}proj.weight\PYGZdq{}}\PYG{p}{:}
+                \PYG{n}{new\PYGZus{}sub\PYGZus{}key} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}attn.k\PYGZus{}proj.W\PYGZdq{}}
+            \PYG{k}{elif} \PYG{n}{sub\PYGZus{}key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}attn.v\PYGZus{}proj.weight\PYGZdq{}}\PYG{p}{:}
+                \PYG{n}{new\PYGZus{}sub\PYGZus{}key} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}attn.v\PYGZus{}proj.W\PYGZdq{}}
+            \PYG{k}{elif} \PYG{n}{sub\PYGZus{}key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}attn.output\PYGZus{}proj.weight\PYGZdq{}}\PYG{p}{:}
+                \PYG{n}{new\PYGZus{}sub\PYGZus{}key} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}attn.o\PYGZus{}proj.W\PYGZdq{}}
+            \PYG{k}{elif} \PYG{n}{sub\PYGZus{}key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}ln2.weight\PYGZdq{}}\PYG{p}{:}
+                \PYG{n}{new\PYGZus{}sub\PYGZus{}key} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}ln2.weight\PYGZdq{}}
+            \PYG{k}{elif} \PYG{n}{sub\PYGZus{}key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}ffn.w1.weight\PYGZdq{}}\PYG{p}{:}
+                \PYG{n}{new\PYGZus{}sub\PYGZus{}key} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}ffn.w1.W\PYGZdq{}}
+            \PYG{k}{elif} \PYG{n}{sub\PYGZus{}key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}ffn.w2.weight\PYGZdq{}}\PYG{p}{:}
+                \PYG{n}{new\PYGZus{}sub\PYGZus{}key} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}ffn.w2.W\PYGZdq{}}
+            \PYG{k}{elif} \PYG{n}{sub\PYGZus{}key} \PYG{o}{==} \PYG{l+s+s2}{\PYGZdq{}ffn.w3.weight\PYGZdq{}}\PYG{p}{:}
+                \PYG{n}{new\PYGZus{}sub\PYGZus{}key} \PYG{o}{=} \PYG{l+s+s2}{\PYGZdq{}ffn.w3.W\PYGZdq{}}
+            \PYG{k}{else}\PYG{p}{:}
+                \PYG{n}{new\PYGZus{}sub\PYGZus{}key} \PYG{o}{=} \PYG{n}{sub\PYGZus{}key}  
+                
+            \PYG{n}{state\PYGZus{}dict}\PYG{p}{[}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}layers.}\PYG{l+s+si}{\PYGZob{}}\PYG{n}{layer\PYGZus{}idx}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{.}\PYG{l+s+si}{\PYGZob{}}\PYG{n}{new\PYGZus{}sub\PYGZus{}key}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{]} \PYG{o}{=} \PYG{n}{tensor}
+            
+        \PYG{c+c1}{\PYGZsh{} E. 兜底策略}
+        \PYG{k}{else}\PYG{p}{:}
+            \PYG{n}{state\PYGZus{}dict}\PYG{p}{[}\PYG{n}{key}\PYG{p}{]} \PYG{o}{=} \PYG{n}{tensor}
+
+    \PYG{c+c1}{\PYGZsh{} 3. 严格加载映射好的权重}
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{load\PYGZus{}state\PYGZus{}dict}\PYG{p}{(}\PYG{n}{state\PYGZus{}dict}\PYG{p}{,} \PYG{n}{strict}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} 4. 执行神圣的前向推理}
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{eval}\PYG{p}{()}
+    \PYG{k}{with} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{no\PYGZus{}grad}\PYG{p}{():}
+        \PYG{c+c1}{\PYGZsh{} 注意：这里传进去的参数变成了 in\PYGZus{}indices}
+        \PYG{n}{output} \PYG{o}{=} \PYG{n}{model}\PYG{p}{(}\PYG{n}{in\PYGZus{}indices}\PYG{p}{)}
+        
+    \PYG{k}{return} \PYG{n}{output}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}rmsnorm}\PYG{p}{(}

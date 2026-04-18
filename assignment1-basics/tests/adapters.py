@@ -26,6 +26,7 @@ from cs336_basics.Chap_2.swiglu import SwiGLU
 from cs336_basics.Chap_2.rope import RotaryPositionalEmbedding
 from cs336_basics.Chap_2.attention import MultiHeadAttention
 from cs336_basics.Chap_2.transformer import TransformerBlock
+from cs336_basics.Chap_2.language_model import TransformerLM
 
 
 def run_linear(
@@ -549,7 +550,77 @@ def run_transformer_lm(
         Float[Tensor, "batch_size sequence_length vocab_size"]: Tensor with the predicted unnormalized
         next-word distribution for each token.
     """
-    raise NotImplementedError
+    # 1. 实例化完整的语言模型
+    model = TransformerLM(
+        vocab_size=vocab_size,
+        context_length=context_length,
+        num_layers=num_layers,
+        d_model=d_model,
+        num_heads=num_heads,
+        d_ff=d_ff,
+        theta=rope_theta,  # 把外部的 rope_theta 传给内部需要的 theta
+        device=in_indices.device, # 使用 in_indices 所在的设备
+    )
+
+    # 2. 疯狂的权重重映射 (The Great Weight Remapping)
+    state_dict = {}
+    
+    for key, tensor in weights.items():
+        # A. 映射 Embedding (老师的键有 's'：token_embeddings)
+        if key == "token_embeddings.weight":
+            state_dict["token_embedding.weight"] = tensor
+            
+        # B. 映射最后的 RMSNorm (老师的键叫 ln_final)
+        elif key == "ln_final.weight":
+            state_dict["final_norm.weight"] = tensor
+            
+        # C. 映射输出预测头 LM Head
+        elif key == "output.weight":
+            state_dict["lm_head.weight"] = tensor
+            
+        # D. 动态映射所有的 Transformer Layers (0, 1, 2... n)
+        elif key.startswith("layers."):
+            parts = key.split(".")
+            layer_idx = parts[1]  
+            sub_key = ".".join(parts[2:])  
+            
+            if sub_key == "ln1.weight":
+                new_sub_key = "ln1.weight"
+            elif sub_key == "attn.q_proj.weight":
+                new_sub_key = "attn.q_proj.W"
+            elif sub_key == "attn.k_proj.weight":
+                new_sub_key = "attn.k_proj.W"
+            elif sub_key == "attn.v_proj.weight":
+                new_sub_key = "attn.v_proj.W"
+            elif sub_key == "attn.output_proj.weight":
+                new_sub_key = "attn.o_proj.W"
+            elif sub_key == "ln2.weight":
+                new_sub_key = "ln2.weight"
+            elif sub_key == "ffn.w1.weight":
+                new_sub_key = "ffn.w1.W"
+            elif sub_key == "ffn.w2.weight":
+                new_sub_key = "ffn.w2.W"
+            elif sub_key == "ffn.w3.weight":
+                new_sub_key = "ffn.w3.W"
+            else:
+                new_sub_key = sub_key  
+                
+            state_dict[f"layers.{layer_idx}.{new_sub_key}"] = tensor
+            
+        # E. 兜底策略
+        else:
+            state_dict[key] = tensor
+
+    # 3. 严格加载映射好的权重
+    model.load_state_dict(state_dict, strict=True)
+
+    # 4. 执行神圣的前向推理
+    model.eval()
+    with torch.no_grad():
+        # 注意：这里传进去的参数变成了 in_indices
+        output = model(in_indices)
+        
+    return output
 
 
 def run_rmsnorm(

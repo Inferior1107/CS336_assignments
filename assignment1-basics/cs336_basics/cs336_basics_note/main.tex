@@ -148,6 +148,47 @@
 
 \end{problembox}
 
+\subsubsection{Relative Positional Embeddings}
+
+\begin{problembox}{rope}{Implement RoPE (2 points)}
+
+    \textbf{Deliverable:} Implement a class \texttt{RotaryPositionalEmbedding} that applies RoPE to the input tensor. The following interface is recommended:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=1em, parsep=0pt]
+
+        \item \mintinline{python}{def __init__(self, theta: float, d_k: int, max_seq_len: int, device=None)} \\
+              Construct the RoPE module and create buffers if needed.
+
+              \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                  \item \texttt{theta}: \textcolor{green!50!black}{\texttt{float}} $\Theta$ value for the RoPE
+                  \item \texttt{d\_k}: \textcolor{green!50!black}{\texttt{int}} dimension of query and key vectors
+                  \item \texttt{max\_seq\_len}: \textcolor{green!50!black}{\texttt{int}} Maximum sequence length that will be inputted
+                  \item \texttt{device}: \textcolor{green!50!black}{\texttt{torch.device | None = None}} Device to store the buffer on
+              \end{itemize}
+
+        \item \mintinline{python}{def forward(self, x: torch.Tensor, token_positions: torch.Tensor) -> torch.Tensor} \\
+              Process an input tensor of shape \texttt{(..., seq\_len, d\_k)} and return a tensor of the same shape. Note that you should tolerate $x$ with an arbitrary number of batch dimensions. You should assume that the token positions are a tensor of shape \texttt{(..., seq\_len)} specifying the token positions of $x$ along the sequence dimension.
+
+              \vspace{0.5em}
+              You should use the token positions to slice your (possibly precomputed) \texttt{cos} and \texttt{sin} tensors along the sequence dimension.
+
+    \end{itemize}
+
+    \vspace{0.5em}
+    To test your implementation, complete \textcolor{red!80!black}{\texttt{[adapters.run\_rope]}} and make sure it passes \texttt{uv run pytest -k test\_rope}.
+
+\end{problembox}
+
+\subsubsection{Scaled Dot-Product Attention}
+
+\begin{problembox}{softmax}{Implement softmax \hfill (1 point)}
+
+    \textbf{Deliverable:} Write a function to apply the softmax operation on a tensor. Your function should take two parameters: a tensor and a \textit{dimension} $i$, and apply softmax to the $i$-th dimension of the input tensor. The output tensor should have the same shape as the input tensor, but its $i$-th dimension will now have a normalized probability distribution. Use the trick of subtracting the maximum value in the $i$-th dimension from all elements of the $i$-th dimension to avoid numerical stability issues.
+
+    To test your implementation, complete \textcolor{red!80!black}{\texttt{[adapters.run\_softmax]}} and make sure it passes \texttt{uv run pytest -k test\_softmax\_matches\_pytorch}.
+
+\end{problembox}
+
 \newpage
 
 \input{sections/99_appendix.tex}

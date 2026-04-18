@@ -20,6 +20,7 @@ from cs336_basics.Chap_2.linear import Linear
 from cs336_basics.Chap_2.embedding import Embedding
 from cs336_basics.Chap_2.rmsnorm import RMSNorm
 from cs336_basics.Chap_2.swiglu import SwiGLU
+from cs336_basics.Chap_2.rope import RotaryPositionalEmbedding
 
 def run_linear(
     d_in: int,
@@ -255,7 +256,22 @@ def run_rope(
     Returns:
         Float[Tensor, " ... sequence_length d_k"]: Tensor with RoPEd input.
     """
-    raise NotImplementedError
+    # 1. 实例化 RoPE 模块
+    model = RotaryPositionalEmbedding(
+        theta=theta,
+        d_k=d_k,
+        max_seq_len=max_seq_len,
+        device=in_query_or_key.device
+    )
+
+
+    # 2. 评估模式并切断梯度，直接计算
+    model.eval()
+    with torch.no_grad():
+        # 注意要把 token_positions 传进去！
+        output = model(in_query_or_key, token_positions)
+        
+    return output
 
 
 def run_transformer_block(
@@ -499,7 +515,25 @@ def run_softmax(in_features: Float[Tensor, " ..."], dim: int) -> Float[Tensor, "
         Float[Tensor, "..."]: Tensor of with the same shape as `in_features` with the output of
         softmax normalizing the specified `dim`.
     """
-    raise NotImplementedError
+    # 1. 寻找指定维度上的最大值
+    # keepdim=True 是灵魂！它能保留维度形状（比如把形状从 [3, 4] 变成 [3, 1]），
+    # 这样后续减法时才能正确触发广播机制 (Broadcasting)。
+    # 注意：torch.max 会返回一个元组 (values, indices)，我们只需要取第 0 项的 values。
+    max_vals = in_features.max(dim=dim, keepdim=True)[0]
+
+    # 2. Max Trick：平移输入值，防止指数爆炸
+    shifted_logits = in_features - max_vals
+
+    # 3. 计算指数 (现在所有的输入都 <= 0，所以 exp 的结果都在 0~1 之间，绝对安全)
+    exps = torch.exp(shifted_logits)
+
+    # 4. 沿着指定维度求和，作为分母
+    sum_exps = exps.sum(dim=dim, keepdim=True)
+
+    # 5. 归一化，得到最终的概率分布
+    probabilities = exps / sum_exps
+
+    return probabilities
 
 
 def run_cross_entropy(

@@ -21,6 +21,7 @@
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.embedding} \PYG{k+kn}{import} \PYG{n}{Embedding}
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.rmsnorm} \PYG{k+kn}{import} \PYG{n}{RMSNorm}
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.swiglu} \PYG{k+kn}{import} \PYG{n}{SwiGLU}
+\PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.rope} \PYG{k+kn}{import} \PYG{n}{RotaryPositionalEmbedding}
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}linear}\PYG{p}{(}
     \PYG{n}{d\PYGZus{}in}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
@@ -256,7 +257,22 @@
 \PYG{l+s+sd}{    Returns:}
 \PYG{l+s+sd}{        Float[Tensor, \PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}k\PYGZdq{}]: Tensor with RoPEd input.}
 \PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
-    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+    \PYG{c+c1}{\PYGZsh{} 1. 实例化 RoPE 模块}
+    \PYG{n}{model} \PYG{o}{=} \PYG{n}{RotaryPositionalEmbedding}\PYG{p}{(}
+        \PYG{n}{theta}\PYG{o}{=}\PYG{n}{theta}\PYG{p}{,}
+        \PYG{n}{d\PYGZus{}k}\PYG{o}{=}\PYG{n}{d\PYGZus{}k}\PYG{p}{,}
+        \PYG{n}{max\PYGZus{}seq\PYGZus{}len}\PYG{o}{=}\PYG{n}{max\PYGZus{}seq\PYGZus{}len}\PYG{p}{,}
+        \PYG{n}{device}\PYG{o}{=}\PYG{n}{in\PYGZus{}query\PYGZus{}or\PYGZus{}key}\PYG{o}{.}\PYG{n}{device}
+    \PYG{p}{)}
+
+
+    \PYG{c+c1}{\PYGZsh{} 2. 评估模式并切断梯度，直接计算}
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{eval}\PYG{p}{()}
+    \PYG{k}{with} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{no\PYGZus{}grad}\PYG{p}{():}
+        \PYG{c+c1}{\PYGZsh{} 注意要把 token\PYGZus{}positions 传进去！}
+        \PYG{n}{output} \PYG{o}{=} \PYG{n}{model}\PYG{p}{(}\PYG{n}{in\PYGZus{}query\PYGZus{}or\PYGZus{}key}\PYG{p}{,} \PYG{n}{token\PYGZus{}positions}\PYG{p}{)}
+        
+    \PYG{k}{return} \PYG{n}{output}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}transformer\PYGZus{}block}\PYG{p}{(}
@@ -500,7 +516,25 @@
 \PYG{l+s+sd}{        Float[Tensor, \PYGZdq{}...\PYGZdq{}]: Tensor of with the same shape as `in\PYGZus{}features` with the output of}
 \PYG{l+s+sd}{        softmax normalizing the specified `dim`.}
 \PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
-    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+    \PYG{c+c1}{\PYGZsh{} 1. 寻找指定维度上的最大值}
+    \PYG{c+c1}{\PYGZsh{} keepdim=True 是灵魂！它能保留维度形状（比如把形状从 [3, 4] 变成 [3, 1]），}
+    \PYG{c+c1}{\PYGZsh{} 这样后续减法时才能正确触发广播机制 (Broadcasting)。}
+    \PYG{c+c1}{\PYGZsh{} 注意：torch.max 会返回一个元组 (values, indices)，我们只需要取第 0 项的 values。}
+    \PYG{n}{max\PYGZus{}vals} \PYG{o}{=} \PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{max}\PYG{p}{(}\PYG{n}{dim}\PYG{o}{=}\PYG{n}{dim}\PYG{p}{,} \PYG{n}{keepdim}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)[}\PYG{l+m+mi}{0}\PYG{p}{]}
+
+    \PYG{c+c1}{\PYGZsh{} 2. Max Trick：平移输入值，防止指数爆炸}
+    \PYG{n}{shifted\PYGZus{}logits} \PYG{o}{=} \PYG{n}{in\PYGZus{}features} \PYG{o}{\PYGZhy{}} \PYG{n}{max\PYGZus{}vals}
+
+    \PYG{c+c1}{\PYGZsh{} 3. 计算指数 (现在所有的输入都 \PYGZlt{}= 0，所以 exp 的结果都在 0\PYGZti{}1 之间，绝对安全)}
+    \PYG{n}{exps} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{exp}\PYG{p}{(}\PYG{n}{shifted\PYGZus{}logits}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} 4. 沿着指定维度求和，作为分母}
+    \PYG{n}{sum\PYGZus{}exps} \PYG{o}{=} \PYG{n}{exps}\PYG{o}{.}\PYG{n}{sum}\PYG{p}{(}\PYG{n}{dim}\PYG{o}{=}\PYG{n}{dim}\PYG{p}{,} \PYG{n}{keepdim}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} 5. 归一化，得到最终的概率分布}
+    \PYG{n}{probabilities} \PYG{o}{=} \PYG{n}{exps} \PYG{o}{/} \PYG{n}{sum\PYGZus{}exps}
+
+    \PYG{k}{return} \PYG{n}{probabilities}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}cross\PYGZus{}entropy}\PYG{p}{(}

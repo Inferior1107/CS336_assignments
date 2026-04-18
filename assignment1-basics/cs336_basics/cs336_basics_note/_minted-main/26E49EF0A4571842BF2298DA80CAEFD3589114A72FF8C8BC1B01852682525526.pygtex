@@ -2,6 +2,7 @@
 \PYG{k+kn}{from} \PYG{n+nn}{\PYGZus{}\PYGZus{}future\PYGZus{}\PYGZus{}} \PYG{k+kn}{import} \PYG{n}{annotations}
 
 \PYG{k+kn}{import} \PYG{n+nn}{os}
+\PYG{k+kn}{import} \PYG{n+nn}{math}
 \PYG{k+kn}{import} \PYG{n+nn}{collections}
 \PYG{k+kn}{import} \PYG{n+nn}{json}
 \PYG{k+kn}{import} \PYG{n+nn}{regex}
@@ -161,7 +162,34 @@
 \PYG{l+s+sd}{    Returns:}
 \PYG{l+s+sd}{        Float[Tensor, \PYGZdq{} ... queries d\PYGZus{}v\PYGZdq{}]: Output of SDPA}
 \PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
-    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+    \PYG{c+c1}{\PYGZsh{} 提取 d\PYGZus{}k 的维度大小，用于后续的缩放}
+    \PYG{n}{d\PYGZus{}k} \PYG{o}{=} \PYG{n}{Q}\PYG{o}{.}\PYG{n}{size}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} 1. 计算打分矩阵并缩放: (Q @ K\PYGZca{}T) / sqrt(d\PYGZus{}k)}
+    \PYG{c+c1}{\PYGZsh{} K.transpose(\PYGZhy{}2, \PYGZhy{}1) 的魔法：只反转最后两个维度 (keys 和 d\PYGZus{}k)，}
+    \PYG{c+c1}{\PYGZsh{} 完全无视前面有多少个 batch 维度 (...)，极其优雅安全！}
+    \PYG{c+c1}{\PYGZsh{} 结果 scores 的形状将会是: (... queries, keys)}
+    \PYG{n}{scores} \PYG{o}{=} \PYG{p}{(}\PYG{n}{Q} \PYG{o}{@} \PYG{n}{K}\PYG{o}{.}\PYG{n}{transpose}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{2}\PYG{p}{,} \PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{))} \PYG{o}{/} \PYG{n}{math}\PYG{o}{.}\PYG{n}{sqrt}\PYG{p}{(}\PYG{n}{d\PYGZus{}k}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} 2. 应用掩码 (Masking)}
+    \PYG{k}{if} \PYG{n}{mask} \PYG{o+ow}{is} \PYG{o+ow}{not} \PYG{k+kc}{None}\PYG{p}{:}
+        \PYG{c+c1}{\PYGZsh{} mask 中值为 True 表示“允许看”，False 表示“遮挡不允许看”。}
+        \PYG{c+c1}{\PYGZsh{} \PYGZti{}mask 取反后，把所有不允许看的位置强制填充为 \PYGZhy{}inf}
+        \PYG{n}{scores} \PYG{o}{=} \PYG{n}{scores}\PYG{o}{.}\PYG{n}{masked\PYGZus{}fill}\PYG{p}{(}\PYG{o}{\PYGZti{}}\PYG{n}{mask}\PYG{p}{,} \PYG{n+nb}{float}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}\PYGZhy{}inf\PYGZsq{}}\PYG{p}{))}
+
+    \PYG{c+c1}{\PYGZsh{} 3. Softmax 归一化}
+    \PYG{c+c1}{\PYGZsh{} 沿着最后一个维度 (keys) 将得分转化为概率分布。}
+    \PYG{c+c1}{\PYGZsh{} 这里你可以调用上一题自己手写的 run\PYGZus{}softmax(scores, dim=\PYGZhy{}1)，}
+    \PYG{c+c1}{\PYGZsh{} 但为了保证在多维 Tensor 上的极致性能，直接调用内置的 torch.softmax 也是绝佳选择。}
+    \PYG{n}{attention\PYGZus{}weights} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{softmax}\PYG{p}{(}\PYG{n}{scores}\PYG{p}{,} \PYG{n}{dim}\PYG{o}{=\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} 4. 乘以 V (提取信息)}
+    \PYG{c+c1}{\PYGZsh{} attention\PYGZus{}weights 形状: (... queries, keys)}
+    \PYG{c+c1}{\PYGZsh{} V 形状: (... keys, d\PYGZus{}v)}
+    \PYG{c+c1}{\PYGZsh{} 矩阵乘法后得到最终结果形状: (... queries, d\PYGZus{}v)}
+    \PYG{n}{output} \PYG{o}{=} \PYG{n}{attention\PYGZus{}weights} \PYG{o}{@} \PYG{n}{V}
+
+    \PYG{k}{return} \PYG{n}{output}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}multihead\PYGZus{}self\PYGZus{}attention}\PYG{p}{(}

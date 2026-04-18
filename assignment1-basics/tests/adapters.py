@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import math
 import collections
 import json
 import regex
@@ -160,7 +161,34 @@ def run_scaled_dot_product_attention(
     Returns:
         Float[Tensor, " ... queries d_v"]: Output of SDPA
     """
-    raise NotImplementedError
+    # 提取 d_k 的维度大小，用于后续的缩放
+    d_k = Q.size(-1)
+
+    # 1. 计算打分矩阵并缩放: (Q @ K^T) / sqrt(d_k)
+    # K.transpose(-2, -1) 的魔法：只反转最后两个维度 (keys 和 d_k)，
+    # 完全无视前面有多少个 batch 维度 (...)，极其优雅安全！
+    # 结果 scores 的形状将会是: (... queries, keys)
+    scores = (Q @ K.transpose(-2, -1)) / math.sqrt(d_k)
+
+    # 2. 应用掩码 (Masking)
+    if mask is not None:
+        # mask 中值为 True 表示“允许看”，False 表示“遮挡不允许看”。
+        # ~mask 取反后，把所有不允许看的位置强制填充为 -inf
+        scores = scores.masked_fill(~mask, float('-inf'))
+
+    # 3. Softmax 归一化
+    # 沿着最后一个维度 (keys) 将得分转化为概率分布。
+    # 这里你可以调用上一题自己手写的 run_softmax(scores, dim=-1)，
+    # 但为了保证在多维 Tensor 上的极致性能，直接调用内置的 torch.softmax 也是绝佳选择。
+    attention_weights = torch.softmax(scores, dim=-1)
+
+    # 4. 乘以 V (提取信息)
+    # attention_weights 形状: (... queries, keys)
+    # V 形状: (... keys, d_v)
+    # 矩阵乘法后得到最终结果形状: (... queries, d_v)
+    output = attention_weights @ V
+
+    return output
 
 
 def run_multihead_self_attention(

@@ -189,6 +189,18 @@
 
 \end{problembox}
 
+\begin{problembox}{scaled\_dot\_product\_attention}{Implement scaled dot-product attention \hfill (5 points)}
+
+    \textbf{Deliverable:} \quad Implement the scaled dot-product attention function. Your implementation should handle keys and queries of shape \texttt{(batch\_size, \dots, seq\_len, d\_k)} and values of shape \texttt{(batch\_size, \dots, seq\_len, d\_v)}, where \dots represents any number of other batch-like dimensions (if provided). The implementation should return an output with the shape \texttt{(batch\_size, \dots, d\_v)}. See section 3.3 for a discussion on batch-like dimensions.
+
+    Your implementation should also support an optional user-provided boolean mask of shape \texttt{(seq\_len, seq\_len)}. The attention probabilities of positions with a mask value of \texttt{True} should collectively sum to 1, and the attention probabilities of positions with a mask value of \texttt{False} should be zero.
+
+    To test your implementation against our provided tests, you will need to implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_scaled\_dot\_product\_attention]}}.
+
+    \texttt{uv run pytest -k test\_scaled\_dot\_product\_attention} tests your implementation on third-order input tensors, while \texttt{uv run pytest -k test\_4d\_scaled\_dot\_product\_attention} tests your implementation on fourth-order input tensors.
+
+\end{problembox}
+
 \newpage
 
 \input{sections/99_appendix.tex}

@@ -11,6 +11,8 @@
 
 \PYG{k+kn}{import} \PYG{n+nn}{numpy.typing} \PYG{k}{as} \PYG{n+nn}{npt}
 \PYG{k+kn}{import} \PYG{n+nn}{torch}
+\PYG{k+kn}{import} \PYG{n+nn}{torch.nn.functional} \PYG{k}{as} \PYG{n+nn}{F}
+\PYG{k+kn}{import} \PYG{n+nn}{einx}
 \PYG{k+kn}{from} \PYG{n+nn}{jaxtyping} \PYG{k+kn}{import} \PYG{n}{Bool}\PYG{p}{,} \PYG{n}{Float}\PYG{p}{,} \PYG{n}{Int}
 \PYG{k+kn}{from} \PYG{n+nn}{torch} \PYG{k+kn}{import} \PYG{n}{Tensor}
 \PYG{k+kn}{from} \PYG{n+nn}{collections} \PYG{k+kn}{import} \PYG{n}{defaultdict}
@@ -23,6 +25,8 @@
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.rmsnorm} \PYG{k+kn}{import} \PYG{n}{RMSNorm}
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.swiglu} \PYG{k+kn}{import} \PYG{n}{SwiGLU}
 \PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.rope} \PYG{k+kn}{import} \PYG{n}{RotaryPositionalEmbedding}
+\PYG{k+kn}{from} \PYG{n+nn}{cs336\PYGZus{}basics.Chap\PYGZus{}2.attention} \PYG{k+kn}{import} \PYG{n}{MultiHeadAttention}
+
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}linear}\PYG{p}{(}
     \PYG{n}{d\PYGZus{}in}\PYG{p}{:} \PYG{n+nb}{int}\PYG{p}{,}
@@ -223,7 +227,29 @@
 \PYG{l+s+sd}{        Float[Tensor, \PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}out\PYGZdq{}]: Tensor with the output of running your optimized, batched multi\PYGZhy{}headed attention}
 \PYG{l+s+sd}{        implementation with the given QKV projection weights and input features.}
 \PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
-    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+    \PYG{c+c1}{\PYGZsh{} 1. 实例化}
+    \PYG{n}{model} \PYG{o}{=} \PYG{n}{MultiHeadAttention}\PYG{p}{(}
+        \PYG{n}{d\PYGZus{}model}\PYG{o}{=}\PYG{n}{d\PYGZus{}model}\PYG{p}{,}
+        \PYG{n}{num\PYGZus{}heads}\PYG{o}{=}\PYG{n}{num\PYGZus{}heads}\PYG{p}{,}
+        \PYG{n}{device}\PYG{o}{=}\PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{device}\PYG{p}{,}
+        \PYG{n}{dtype}\PYG{o}{=}\PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{dtype}
+    \PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} 2. 加载权重 (由于我们的 Linear 类内部参数叫 W，所以加 .W 后缀)}
+    \PYG{n}{state\PYGZus{}dict} \PYG{o}{=} \PYG{p}{\PYGZob{}}
+        \PYG{l+s+s2}{\PYGZdq{}q\PYGZus{}proj.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{q\PYGZus{}proj\PYGZus{}weight}\PYG{p}{,}
+        \PYG{l+s+s2}{\PYGZdq{}k\PYGZus{}proj.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{k\PYGZus{}proj\PYGZus{}weight}\PYG{p}{,}
+        \PYG{l+s+s2}{\PYGZdq{}v\PYGZus{}proj.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{v\PYGZus{}proj\PYGZus{}weight}\PYG{p}{,}
+        \PYG{l+s+s2}{\PYGZdq{}o\PYGZus{}proj.W\PYGZdq{}}\PYG{p}{:} \PYG{n}{o\PYGZus{}proj\PYGZus{}weight}
+    \PYG{p}{\PYGZcb{}}
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{load\PYGZus{}state\PYGZus{}dict}\PYG{p}{(}\PYG{n}{state\PYGZus{}dict}\PYG{p}{,} \PYG{n}{strict}\PYG{o}{=}\PYG{k+kc}{True}\PYG{p}{)}
+
+    \PYG{c+c1}{\PYGZsh{} 3. 执行推理}
+    \PYG{n}{model}\PYG{o}{.}\PYG{n}{eval}\PYG{p}{()}
+    \PYG{k}{with} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{no\PYGZus{}grad}\PYG{p}{():}
+        \PYG{n}{output} \PYG{o}{=} \PYG{n}{model}\PYG{p}{(}\PYG{n}{in\PYGZus{}features}\PYG{p}{)}
+        
+    \PYG{k}{return} \PYG{n}{output}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}multihead\PYGZus{}self\PYGZus{}attention\PYGZus{}with\PYGZus{}rope}\PYG{p}{(}
@@ -263,7 +289,51 @@
 \PYG{l+s+sd}{        Float[Tensor, \PYGZdq{} ... sequence\PYGZus{}length d\PYGZus{}out\PYGZdq{}]: Tensor with the output of running your optimized, batched multi\PYGZhy{}headed attention}
 \PYG{l+s+sd}{        implementation with the given QKV projection weights and input features.}
 \PYG{l+s+sd}{    \PYGZdq{}\PYGZdq{}\PYGZdq{}}
-    \PYG{k}{raise} \PYG{n+ne}{NotImplementedError}
+    \PYG{c+c1}{\PYGZsh{} 1. 准备维度参数}
+    \PYG{n}{d\PYGZus{}head} \PYG{o}{=} \PYG{n}{d\PYGZus{}model} \PYG{o}{//} \PYG{n}{num\PYGZus{}heads}
+    \PYG{n}{seq\PYGZus{}len} \PYG{o}{=} \PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{shape}\PYG{p}{[}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{2}\PYG{p}{]}
+    
+    \PYG{c+c1}{\PYGZsh{} 2. 线性投影}
+    \PYG{c+c1}{\PYGZsh{} 利用 F.linear 直接把权重乘上去得到 Q, K, V}
+    \PYG{n}{Q} \PYG{o}{=} \PYG{n}{F}\PYG{o}{.}\PYG{n}{linear}\PYG{p}{(}\PYG{n}{in\PYGZus{}features}\PYG{p}{,} \PYG{n}{q\PYGZus{}proj\PYGZus{}weight}\PYG{p}{)}
+    \PYG{n}{K} \PYG{o}{=} \PYG{n}{F}\PYG{o}{.}\PYG{n}{linear}\PYG{p}{(}\PYG{n}{in\PYGZus{}features}\PYG{p}{,} \PYG{n}{k\PYGZus{}proj\PYGZus{}weight}\PYG{p}{)}
+    \PYG{n}{V} \PYG{o}{=} \PYG{n}{F}\PYG{o}{.}\PYG{n}{linear}\PYG{p}{(}\PYG{n}{in\PYGZus{}features}\PYG{p}{,} \PYG{n}{v\PYGZus{}proj\PYGZus{}weight}\PYG{p}{)}
+    
+    \PYG{c+c1}{\PYGZsh{} 3. 切分多头 (Split Heads)}
+    \PYG{c+c1}{\PYGZsh{} 形状变化: (... seq\PYGZus{}len, d\PYGZus{}model) \PYGZhy{}\PYGZgt{} (... heads, seq\PYGZus{}len, d\PYGZus{}head)}
+    \PYG{n}{Q} \PYG{o}{=} \PYG{n}{einx}\PYG{o}{.}\PYG{n}{rearrange}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}... s (h d) \PYGZhy{}\PYGZgt{} ... h s d\PYGZdq{}}\PYG{p}{,} \PYG{n}{Q}\PYG{p}{,} \PYG{n}{h}\PYG{o}{=}\PYG{n}{num\PYGZus{}heads}\PYG{p}{)}
+    \PYG{n}{K} \PYG{o}{=} \PYG{n}{einx}\PYG{o}{.}\PYG{n}{rearrange}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}... s (h d) \PYGZhy{}\PYGZgt{} ... h s d\PYGZdq{}}\PYG{p}{,} \PYG{n}{K}\PYG{p}{,} \PYG{n}{h}\PYG{o}{=}\PYG{n}{num\PYGZus{}heads}\PYG{p}{)}
+    \PYG{n}{V} \PYG{o}{=} \PYG{n}{einx}\PYG{o}{.}\PYG{n}{rearrange}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}... s (h d) \PYGZhy{}\PYGZgt{} ... h s d\PYGZdq{}}\PYG{p}{,} \PYG{n}{V}\PYG{p}{,} \PYG{n}{h}\PYG{o}{=}\PYG{n}{num\PYGZus{}heads}\PYG{p}{)}
+    
+    \PYG{c+c1}{\PYGZsh{} 4. 实例化并注入 RoPE (旋转魔法时刻！)}
+    \PYG{n}{rope} \PYG{o}{=} \PYG{n}{RotaryPositionalEmbedding}\PYG{p}{(}\PYG{n}{theta}\PYG{p}{,} \PYG{n}{d\PYGZus{}head}\PYG{p}{,} \PYG{n}{max\PYGZus{}seq\PYGZus{}len}\PYG{p}{,} \PYG{n}{device}\PYG{o}{=}\PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{device}\PYG{p}{)}
+    
+    \PYG{c+c1}{\PYGZsh{} 【高能预警：维度广播魔法】}
+    \PYG{c+c1}{\PYGZsh{} 现在的 Q 是 (... heads, seq\PYGZus{}len, d\PYGZus{}head)，多了一个 heads 维度。}
+    \PYG{c+c1}{\PYGZsh{} 为了让我们之前写的 RoPE 能够查表对齐，我们需要给 token\PYGZus{}positions 也加上一个假的 head 维度}
+    \PYG{k}{if} \PYG{n}{token\PYGZus{}positions} \PYG{o+ow}{is} \PYG{k+kc}{None}\PYG{p}{:}
+        \PYG{n}{token\PYGZus{}positions} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{arange}\PYG{p}{(}\PYG{n}{seq\PYGZus{}len}\PYG{p}{,} \PYG{n}{device}\PYG{o}{=}\PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{device}\PYG{p}{)}
+    
+    \PYG{c+c1}{\PYGZsh{} unsqueeze(\PYGZhy{}2) 会把 (... seq\PYGZus{}len) 变成 (... 1, seq\PYGZus{}len)}
+    \PYG{c+c1}{\PYGZsh{} 这样 RoPE 在相乘时，就会自动把这 1 个位置信息复印 (Broadcast) 给所有的 heads！}
+    \PYG{n}{pos\PYGZus{}for\PYGZus{}rope} \PYG{o}{=} \PYG{n}{token\PYGZus{}positions}\PYG{o}{.}\PYG{n}{unsqueeze}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{2}\PYG{p}{)} 
+        
+    \PYG{c+c1}{\PYGZsh{} 只对 Q 和 K 旋转，绝对不能旋转 V！}
+    \PYG{n}{Q} \PYG{o}{=} \PYG{n}{rope}\PYG{p}{(}\PYG{n}{Q}\PYG{p}{,} \PYG{n}{pos\PYGZus{}for\PYGZus{}rope}\PYG{p}{)}
+    \PYG{n}{K} \PYG{o}{=} \PYG{n}{rope}\PYG{p}{(}\PYG{n}{K}\PYG{p}{,} \PYG{n}{pos\PYGZus{}for\PYGZus{}rope}\PYG{p}{)}
+    
+    \PYG{c+c1}{\PYGZsh{} 5. 经典注意力打分与掩码 (Attention)}
+    \PYG{n}{scores} \PYG{o}{=} \PYG{p}{(}\PYG{n}{Q} \PYG{o}{@} \PYG{n}{K}\PYG{o}{.}\PYG{n}{transpose}\PYG{p}{(}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{2}\PYG{p}{,} \PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{))} \PYG{o}{/} \PYG{n}{math}\PYG{o}{.}\PYG{n}{sqrt}\PYG{p}{(}\PYG{n}{d\PYGZus{}head}\PYG{p}{)}
+    
+    \PYG{n}{mask} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{tril}\PYG{p}{(}\PYG{n}{torch}\PYG{o}{.}\PYG{n}{ones}\PYG{p}{(}\PYG{n}{seq\PYGZus{}len}\PYG{p}{,} \PYG{n}{seq\PYGZus{}len}\PYG{p}{,} \PYG{n}{dtype}\PYG{o}{=}\PYG{n}{torch}\PYG{o}{.}\PYG{n}{bool}\PYG{p}{,} \PYG{n}{device}\PYG{o}{=}\PYG{n}{in\PYGZus{}features}\PYG{o}{.}\PYG{n}{device}\PYG{p}{))}
+    \PYG{n}{scores} \PYG{o}{=} \PYG{n}{scores}\PYG{o}{.}\PYG{n}{masked\PYGZus{}fill}\PYG{p}{(}\PYG{o}{\PYGZti{}}\PYG{n}{mask}\PYG{p}{,} \PYG{n+nb}{float}\PYG{p}{(}\PYG{l+s+s1}{\PYGZsq{}\PYGZhy{}inf\PYGZsq{}}\PYG{p}{))}
+    
+    \PYG{n}{attn\PYGZus{}weights} \PYG{o}{=} \PYG{n}{torch}\PYG{o}{.}\PYG{n}{softmax}\PYG{p}{(}\PYG{n}{scores}\PYG{p}{,} \PYG{n}{dim}\PYG{o}{=\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{)}
+    \PYG{n}{out} \PYG{o}{=} \PYG{n}{attn\PYGZus{}weights} \PYG{o}{@} \PYG{n}{V}
+    
+    \PYG{c+c1}{\PYGZsh{} 6. 缝合多头并最终投影 (Concat \PYGZam{} Output Projection)}
+    \PYG{n}{out} \PYG{o}{=} \PYG{n}{einx}\PYG{o}{.}\PYG{n}{rearrange}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}... h s d \PYGZhy{}\PYGZgt{} ... s (h d)\PYGZdq{}}\PYG{p}{,} \PYG{n}{out}\PYG{p}{)}
+    \PYG{k}{return} \PYG{n}{F}\PYG{o}{.}\PYG{n}{linear}\PYG{p}{(}\PYG{n}{out}\PYG{p}{,} \PYG{n}{o\PYGZus{}proj\PYGZus{}weight}\PYG{p}{)}
 
 
 \PYG{k}{def} \PYG{n+nf}{run\PYGZus{}rope}\PYG{p}{(}

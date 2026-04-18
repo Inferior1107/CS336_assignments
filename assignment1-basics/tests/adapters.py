@@ -10,6 +10,8 @@ from typing import IO, Any, BinaryIO, Dict, List, Tuple
 
 import numpy.typing as npt
 import torch
+import torch.nn.functional as F
+import einx
 from jaxtyping import Bool, Float, Int
 from torch import Tensor
 from collections import defaultdict
@@ -22,6 +24,8 @@ from cs336_basics.Chap_2.embedding import Embedding
 from cs336_basics.Chap_2.rmsnorm import RMSNorm
 from cs336_basics.Chap_2.swiglu import SwiGLU
 from cs336_basics.Chap_2.rope import RotaryPositionalEmbedding
+from cs336_basics.Chap_2.attention import MultiHeadAttention
+
 
 def run_linear(
     d_in: int,
@@ -222,7 +226,29 @@ def run_multihead_self_attention(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    # 1. 实例化
+    model = MultiHeadAttention(
+        d_model=d_model,
+        num_heads=num_heads,
+        device=in_features.device,
+        dtype=in_features.dtype
+    )
+
+    # 2. 加载权重 (由于我们的 Linear 类内部参数叫 W，所以加 .W 后缀)
+    state_dict = {
+        "q_proj.W": q_proj_weight,
+        "k_proj.W": k_proj_weight,
+        "v_proj.W": v_proj_weight,
+        "o_proj.W": o_proj_weight
+    }
+    model.load_state_dict(state_dict, strict=True)
+
+    # 3. 执行推理
+    model.eval()
+    with torch.no_grad():
+        output = model(in_features)
+        
+    return output
 
 
 def run_multihead_self_attention_with_rope(
@@ -262,7 +288,51 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    raise NotImplementedError
+    # 1. 准备维度参数
+    d_head = d_model // num_heads
+    seq_len = in_features.shape[-2]
+    
+    # 2. 线性投影
+    # 利用 F.linear 直接把权重乘上去得到 Q, K, V
+    Q = F.linear(in_features, q_proj_weight)
+    K = F.linear(in_features, k_proj_weight)
+    V = F.linear(in_features, v_proj_weight)
+    
+    # 3. 切分多头 (Split Heads)
+    # 形状变化: (... seq_len, d_model) -> (... heads, seq_len, d_head)
+    Q = einx.rearrange("... s (h d) -> ... h s d", Q, h=num_heads)
+    K = einx.rearrange("... s (h d) -> ... h s d", K, h=num_heads)
+    V = einx.rearrange("... s (h d) -> ... h s d", V, h=num_heads)
+    
+    # 4. 实例化并注入 RoPE (旋转魔法时刻！)
+    rope = RotaryPositionalEmbedding(theta, d_head, max_seq_len, device=in_features.device)
+    
+    # 【高能预警：维度广播魔法】
+    # 现在的 Q 是 (... heads, seq_len, d_head)，多了一个 heads 维度。
+    # 为了让我们之前写的 RoPE 能够查表对齐，我们需要给 token_positions 也加上一个假的 head 维度
+    if token_positions is None:
+        token_positions = torch.arange(seq_len, device=in_features.device)
+    
+    # unsqueeze(-2) 会把 (... seq_len) 变成 (... 1, seq_len)
+    # 这样 RoPE 在相乘时，就会自动把这 1 个位置信息复印 (Broadcast) 给所有的 heads！
+    pos_for_rope = token_positions.unsqueeze(-2) 
+        
+    # 只对 Q 和 K 旋转，绝对不能旋转 V！
+    Q = rope(Q, pos_for_rope)
+    K = rope(K, pos_for_rope)
+    
+    # 5. 经典注意力打分与掩码 (Attention)
+    scores = (Q @ K.transpose(-2, -1)) / math.sqrt(d_head)
+    
+    mask = torch.tril(torch.ones(seq_len, seq_len, dtype=torch.bool, device=in_features.device))
+    scores = scores.masked_fill(~mask, float('-inf'))
+    
+    attn_weights = torch.softmax(scores, dim=-1)
+    out = attn_weights @ V
+    
+    # 6. 缝合多头并最终投影 (Concat & Output Projection)
+    out = einx.rearrange("... h s d -> ... s (h d)", out)
+    return F.linear(out, o_proj_weight)
 
 
 def run_rope(

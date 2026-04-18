@@ -288,49 +288,42 @@ def run_multihead_self_attention_with_rope(
         Float[Tensor, " ... sequence_length d_out"]: Tensor with the output of running your optimized, batched multi-headed attention
         implementation with the given QKV projection weights and input features.
     """
-    # 1. 准备维度参数
+    # 1. 维度准备
     d_head = d_model // num_heads
     seq_len = in_features.shape[-2]
     
-    # 2. 线性投影
-    # 利用 F.linear 直接把权重乘上去得到 Q, K, V
-    Q = F.linear(in_features, q_proj_weight)
-    K = F.linear(in_features, k_proj_weight)
-    V = F.linear(in_features, v_proj_weight)
+    # 2. 线性投影与多头切分 (一步位移)
+    # 直接投影后切成 [... heads, seq, d_head]
+    Q = einx.rearrange("... s (h d) -> ... h s d", F.linear(in_features, q_proj_weight), h=num_heads)
+    K = einx.rearrange("... s (h d) -> ... h s d", F.linear(in_features, k_proj_weight), h=num_heads)
+    V = einx.rearrange("... s (h d) -> ... h s d", F.linear(in_features, v_proj_weight), h=num_heads)
     
-    # 3. 切分多头 (Split Heads)
-    # 形状变化: (... seq_len, d_model) -> (... heads, seq_len, d_head)
-    Q = einx.rearrange("... s (h d) -> ... h s d", Q, h=num_heads)
-    K = einx.rearrange("... s (h d) -> ... h s d", K, h=num_heads)
-    V = einx.rearrange("... s (h d) -> ... h s d", V, h=num_heads)
-    
-    # 4. 实例化并注入 RoPE (旋转魔法时刻！)
+    # 3. 注入 RoPE
     rope = RotaryPositionalEmbedding(theta, d_head, max_seq_len, device=in_features.device)
-    
-    # 【高能预警：维度广播魔法】
-    # 现在的 Q 是 (... heads, seq_len, d_head)，多了一个 heads 维度。
-    # 为了让我们之前写的 RoPE 能够查表对齐，我们需要给 token_positions 也加上一个假的 head 维度
     if token_positions is None:
         token_positions = torch.arange(seq_len, device=in_features.device)
     
-    # unsqueeze(-2) 会把 (... seq_len) 变成 (... 1, seq_len)
-    # 这样 RoPE 在相乘时，就会自动把这 1 个位置信息复印 (Broadcast) 给所有的 heads！
+    # 利用 unsqueeze(-2) 配合 RoPE 内部的 einx 逻辑进行 heads 维度的广播
     pos_for_rope = token_positions.unsqueeze(-2) 
-        
-    # 只对 Q 和 K 旋转，绝对不能旋转 V！
-    Q = rope(Q, pos_for_rope)
-    K = rope(K, pos_for_rope)
+    Q, K = rope(Q, pos_for_rope), rope(K, pos_for_rope)
     
-    # 5. 经典注意力打分与掩码 (Attention)
-    scores = (Q @ K.transpose(-2, -1)) / math.sqrt(d_head)
+    # 4. 【核心优化】计算注意力打分 (einx.dot)
+    # 代替 (Q @ K.transpose(-2, -1))
+    # 语义：Query(s_q) 与 Key(s_k) 在特征维(d)点积，保留 batch(...) 和 head(h)
+    logits = einx.dot("... h s_q d, ... h s_k d -> ... h s_q s_k", Q, K) / math.sqrt(d_head)
     
+    # 5. 因果掩码与归一化
+    # 这里的 mask 也可以用 einx 思想理解：它只作用于最后两个 s 维度
     mask = torch.tril(torch.ones(seq_len, seq_len, dtype=torch.bool, device=in_features.device))
-    scores = scores.masked_fill(~mask, float('-inf'))
+    # 使用 torch.where 配合布尔掩码比 masked_fill 更符合函数式风格
+    attn_weights = torch.softmax(torch.where(mask, logits, float("-inf")), dim=-1)
     
-    attn_weights = torch.softmax(scores, dim=-1)
-    out = attn_weights @ V
+    # 6. 【核心优化】加权聚合提取 Value (einx.dot)
+    # 代替 attn_weights @ V
+    # 语义：用权重(s_k)对内容(s_k)进行加权求和，产出查询位置(s_q)的特征(d)
+    out = einx.dot("... h s_q s_k, ... h s_k d -> ... h s_q d", attn_weights, V)
     
-    # 6. 缝合多头并最终投影 (Concat & Output Projection)
+    # 7. 缝合多头并最终投影
     out = einx.rearrange("... h s d -> ... s (h d)", out)
     return F.linear(out, o_proj_weight)
 

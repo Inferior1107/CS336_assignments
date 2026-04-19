@@ -253,6 +253,97 @@
 
 \end{problembox}
 
+\begin{problembox}{transformer\_accounting}{Transformer LM resource accounting \hfill (5 points)}
+
+    \begin{enumerate}[label=(\alph*), itemsep=1em, topsep=0pt]
+
+        \item Consider GPT-2 XL, which has the following configuration:
+
+              \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                  \item \texttt{vocab\_size} : 50,257 \vspace{-0.5em}
+                  \item \texttt{context\_length} : 1,024 \vspace{-0.5em}
+                  \item \texttt{num\_layers} : 48 \vspace{-0.5em}
+                  \item \texttt{d\_model} : 1,600 \vspace{-0.5em}
+                  \item \texttt{num\_heads} : 25 \vspace{-0.5em}
+                  \item \texttt{d\_ff} : 6,400 \vspace{-0.5em}
+              \end{itemize}
+
+              \vspace{0.5em}
+              Suppose we constructed our model using this configuration. How many trainable parameters would our model have? Assuming each parameter is represented using single-precision floating point, how much memory is required to just load this model?
+
+              % ================= 开始 Answerbox =================
+              \begin{answerbox}
+                  \textbf{Answer:}
+
+                  \textbf{A. Token Embeddings}
+                  \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                      \item \textbf{Calculation:} $\texttt{vocab\_size} \times d_{\mathrm{model}} = 50,257 \times 1,600 = \mathbf{80,411,200}$
+                      \item \textbf{Function:} Maps discrete word IDs to continuous numerical vectors; this is the first step in the model's understanding of language.
+                  \end{itemize}
+
+                  \vspace{1em}
+                  \textbf{B. Transformer Blocks (48 layers in total)}
+
+                  Each Block contains:
+                  \begin{enumerate}
+                      \item \textbf{Attention Projections:}
+                            \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                                \item Four matrices $W_q, W_k, W_v, W_o$, each of size $d_{\mathrm{model}} \times d_{\mathrm{model}}$.
+                                \item \textbf{Parameters:} $4 \times (1,600 \times 1,600) = 10,240,000$
+                            \end{itemize}
+
+                      \item \textbf{SwiGLU Feed-Forward Network (FFN):}
+                            \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                                \item According to your implementation, it contains $W_1, W_3$ (up-projection) and $W_2$ (down-projection).
+                                \item \textbf{Parameters:} $3 \times (d_{\mathrm{model}} \times d_{\mathrm{ff}}) = 3 \times (1,600 \times 6,400) = 30,720,000$
+                            \end{itemize}
+
+                      \item \textbf{Layer Normalization (RMSNorm):}
+                            \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                                \item \texttt{ln1} and \texttt{ln2} each have a learnable scale parameter of length $d_{\mathrm{model}}$.
+                                \item \textbf{Parameters:} $2 \times 1,600 = 3,200$
+                            \end{itemize}
+                  \end{enumerate}
+
+                  \textbf{Subtotal per layer:} $10,240,000 + 30,720,000 + 3,200 = 40,963,200$ \\
+                  \textbf{Total for 48 layers:} $48 \times 40,963,200 = \mathbf{1,966,233,600}$
+
+                  \vspace{1em}
+                  \textbf{C. Final Output Layer (Final Norm \& LM Head)}
+                  \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                      \item \textbf{Final RMSNorm:} $1,600$
+                      \item \textbf{LM Head:} Maps the hidden state back to the vocabulary, $d_{\mathrm{model}} \times \texttt{vocab\_size} = 1,600 \times 50,257 = 80,411,200$
+                      \item \textbf{Function:} Converts the high-dimensional features learned by the model back into a probability distribution over words, used to predict the next word.
+                  \end{itemize}
+
+                  \textbf{Total Parameters:} \newline $80,411,200 + 1,966,233,600 + 80,411,200 = \mathbf{2,127,056,000}$
+                  \textbf{Memory Cost(FP32):} $2,127,057,600 \times 4 \text{ Bytes} \approx \mathbf{8,508,230,400} \text{ Bytes}$
+
+                  \vspace{0.5em}
+              \end{answerbox}
+              % ================= 结束 Answerbox =================
+
+
+        \item Identify the matrix multiplies required to complete a forward pass of our GPT-2 XL-shaped model. How many FLOPs do these matrix multiplies require in total? Assume that our input sequence has \texttt{context\_length} tokens.
+
+              \textbf{Deliverable:} A list of matrix multiplies (with descriptions), and the total number of FLOPs required.
+
+        \item Based on your analysis above, which parts of the model require the most FLOPs?
+
+              \textbf{Deliverable:} A one-to-two sentence response.
+
+        \item Repeat your analysis with GPT-2 small (12 layers, 768 \texttt{d\_model}, 12 heads), GPT-2 medium (24 layers, 1024 \texttt{d\_model}, 16 heads), and GPT-2 large (36 layers, 1280 \texttt{d\_model}, 20 heads). As the model size increases, which parts of the Transformer LM take up proportionally more or less of the total FLOPs?
+
+              \textbf{Deliverable:} For each model, provide a breakdown of model components and its associated FLOPs (as a proportion of the total FLOPs required for a forward pass). In addition, provide a one-to-two sentence description of how varying the model size changes the proportional FLOPs of each component.
+
+        \item Take GPT-2 XL and increase the context length to 16,384. How does the total FLOPs for one forward pass change? How do the relative contribution of FLOPs of the model components change?
+
+              \textbf{Deliverable:} A one-to-two sentence response.
+
+    \end{enumerate}
+
+\end{problembox}
+
 \newpage
 
 \input{sections/99_appendix.tex}

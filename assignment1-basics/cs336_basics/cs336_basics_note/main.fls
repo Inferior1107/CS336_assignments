@@ -472,6 +472,9 @@ INPUT ./main.pyg
 INPUT ./_minted-main/A6FE6A50042292D0180276BA35CC1336541C68F80C6A6F06151AFD63BAE50EBC.pygtex
 INPUT ./_minted-main/A6FE6A50042292D0180276BA35CC1336541C68F80C6A6F06151AFD63BAE50EBC.pygtex
 INPUT _minted-main/A6FE6A50042292D0180276BA35CC1336541C68F80C6A6F06151AFD63BAE50EBC.pygtex
+INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmbx10.tfm
+INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmbx7.tfm
+INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmbx5.tfm
 INPUT ./sections/99_appendix.tex
 INPUT ./sections/99_appendix.tex
 INPUT sections/99_appendix.tex
@@ -486,6 +489,7 @@ INPUT _minted-main/7B27C4854C1E0C656909387A5CCC8ED9EBE515C6F385C182F5FF25B384DF7
 INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmr6.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/lmmi6.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/lmsy6.tfm
+INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmbx6.tfm
 INPUT ../test_function/tokenizer.py
 INPUT ./_minted-main/0A6899EBB7FD2F22E0AE59E053A50927915858D6161727FC8421BD2BAE22FBDA.pygtex
 INPUT ./_minted-main/0A6899EBB7FD2F22E0AE59E053A50927915858D6161727FC8421BD2BAE22FBDA.pygtex

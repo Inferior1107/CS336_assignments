@@ -1,0 +1,515 @@
+\section{Transformer Language Model Architecture}
+
+\subsection{Transformer LM}
+
+\subsubsection{Token Embeddings}
+
+\subsubsection{Pre-norm Transformer Block}
+
+\subsection{Output Normalization and Embedding}
+
+\subsection{Remark: Batching, Einsum and Eﬀicient Computation}
+
+\subsubsection{Mathematical Notation and Memory Ordering}
+
+\subsection{Basic Building Blocks: Linear and Embedding Modules}
+
+\subsubsection{Parameter Initialization}
+
+\subsubsection{Linear Module}
+
+\begin{problembox}{linear}{Implementing the linear module \hfill (1 point)}
+
+    \textbf{Deliverable:} Implement a \texttt{Linear} class that inherits from \texttt{torch.nn.Module} and performs a linear transformation. Your implementation should follow the interface of PyTorch's built-in \texttt{nn.Linear} module, except for not having a \texttt{bias} argument or parameter. We recommend the following interface:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=1em, parsep=0pt]
+
+        \item \mintinline{python}{def __init__(self, in_features, out_features, device=None, dtype=None)} Construct a linear transformation module. This function should accept the following parameters:
+
+              \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                  \item \texttt{in\_features}: \textcolor{green!50!black}{\texttt{int}} final dimension of the input
+                  \item \texttt{out\_features}: \textcolor{green!50!black}{\texttt{int}} final dimension of the output
+                  \item \texttt{device}: \textcolor{green!50!black}{\texttt{torch.device | None = None}} Device to store the parameters on
+                  \item \texttt{dtype}: \textcolor{green!50!black}{\texttt{torch.dtype | None = None}} Data type of the parameters
+              \end{itemize}
+
+        \item \mintinline{python}{def forward(self, x: torch.Tensor) -> torch.Tensor} Apply the linear transformation to the input.
+
+    \end{itemize}
+
+    Make sure to:
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item subclass \texttt{nn.Module}
+        \item call the superclass constructor
+        \item construct and store your parameter as $W$ (not $W^\top$) for memory ordering reasons, putting it in an \texttt{nn.Parameter}
+        \item of course, don't use \texttt{nn.Linear} or \texttt{nn.functional.linear}
+    \end{itemize}
+
+    \vspace{0.5em}
+
+    Code below;
+
+\end{problembox}
+
+\subsubsection{Embedding Module}
+
+\begin{problembox}{embedding}{Implement the embedding module \hfill (1 point)}
+
+    \textbf{Deliverable:} Implement the \texttt{Embedding} class that inherits from \texttt{torch.nn.Module} and performs an embedding lookup. Your implementation should follow the interface of PyTorch's built-in \texttt{nn.Embedding} module. We recommend the following interface:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=1em, parsep=0pt]
+
+        \item \mintinline{python}{def __init__(self, num_embeddings, embedding_dim, device=None, dtype=None)} \\
+              Construct an embedding module. This function should accept the following parameters:
+
+              \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                  \item \texttt{num\_embeddings}: \textcolor{green!50!black}{\texttt{int}} Size of the vocabulary
+                  \item \texttt{embedding\_dim}: \textcolor{green!50!black}{\texttt{int}} Dimension of the embedding vectors, i.e., $d_{\mathrm{model}}$
+                  \item \texttt{device}: \textcolor{green!50!black}{\texttt{torch.device | None = None}} Device to store the parameters on
+                  \item \texttt{dtype}: \textcolor{green!50!black}{\texttt{torch.dtype | None = None}} Data type of the parameters
+              \end{itemize}
+
+        \item \mintinline{python}{def forward(self, token_ids: torch.Tensor) -> torch.Tensor} \\
+              Lookup the embedding vectors for the given token IDs.
+
+    \end{itemize}
+
+    Make sure to:
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item subclass \texttt{nn.Module}
+        \item call the superclass constructor
+        \item initialize your embedding matrix as a \texttt{nn.Parameter}
+        \item store the embedding matrix with the \texttt{d\_model} being the final dimension
+        \item of course, don't use \texttt{nn.Embedding} or \texttt{nn.functional.embedding}
+    \end{itemize}
+
+    \vspace{0.5em}
+    Again, use the settings from above for initialization, and use \texttt{torch.nn.init.trunc\_normal\_} to initialize the weights.
+
+    To test your implementation, implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_embedding]}}. Then, run \texttt{uv run pytest -k test\_embedding}.
+
+\end{problembox}
+
+\subsection{Pre-Norm Transformer Block}
+
+\subsubsection{Root Mean Square Layer Normalization}
+
+\begin{problembox}{rmsnorm}{Root Mean Square Layer Normalization (1 point)}
+
+    \textbf{Deliverable:} Implement RMSNorm as a \texttt{torch.nn.Module}. We recommend the following interface:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=1em, parsep=0pt]
+
+        \item \mintinline{python}{def __init__(self, d_model: int, eps: float = 1e-5, device=None, dtype=None)} \\
+              Construct the RMSNorm module. This function should accept the following parameters:
+
+              \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                  \item \texttt{d\_model}: \textcolor{green!50!black}{\texttt{int}} Hidden dimension of the model
+                  \item \texttt{eps}: \textcolor{green!50!black}{\texttt{float = 1e-5}} Epsilon value for numerical stability
+                  \item \texttt{device}: \textcolor{green!50!black}{\texttt{torch.device | None = None}} Device to store the parameters on
+                  \item \texttt{dtype}: \textcolor{green!50!black}{\texttt{torch.dtype | None = None}} Data type of the parameters
+              \end{itemize}
+
+        \item \mintinline{python}{def forward(self, x: torch.Tensor) -> torch.Tensor} \\
+              Process an input tensor of shape \texttt{(batch\_size, sequence\_length, d\_model)} and return a tensor of the same shape.
+
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{Note:} Remember to upcast your input to \texttt{torch.float32} before performing the normalization (and later downcast to the original dtype), as described above.
+
+    To test your implementation, implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_rmsnorm]}}. Then, run \texttt{uv run pytest -k test\_rmsnorm}.
+
+\end{problembox}
+
+\subsubsection{Position-Wise Feed-Forward Network}
+
+\begin{problembox}{positionwise\_feedforward}{Implement the position-wise feed-forward network (2 points)}
+
+    \textbf{Deliverable:} \quad Implement the SwiGLU feed-forward network, composed of a SiLU activation function and a GLU.
+
+    \vspace{0.5em}
+    \textbf{Note:} in this particular case, you should feel free to use \texttt{torch.sigmoid} in your implementation for numerical stability.
+
+    \vspace{0.5em}
+    You should set $d_{\mathrm{ff}}$ to approximately $\frac{8}{3} \times d_{\mathrm{model}}$ in your implementation, while ensuring that the dimensionality of the inner feed-forward layer is a multiple of 64 to make good use of your hardware. To test your implementation against our provided tests, you will need to implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_swiglu]}}. Then, run \texttt{uv run pytest -k test\_swiglu} to test your implementation.
+
+\end{problembox}
+
+\subsubsection{Relative Positional Embeddings}
+
+\begin{problembox}{rope}{Implement RoPE (2 points)}
+
+    \textbf{Deliverable:} Implement a class \texttt{RotaryPositionalEmbedding} that applies RoPE to the input tensor. The following interface is recommended:
+
+    \begin{itemize}[label={}, leftmargin=0pt, itemsep=1em, parsep=0pt]
+
+        \item \mintinline{python}{def __init__(self, theta: float, d_k: int, max_seq_len: int, device=None)} \\
+              Construct the RoPE module and create buffers if needed.
+
+              \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+                  \item \texttt{theta}: \textcolor{green!50!black}{\texttt{float}} $\Theta$ value for the RoPE
+                  \item \texttt{d\_k}: \textcolor{green!50!black}{\texttt{int}} dimension of query and key vectors
+                  \item \texttt{max\_seq\_len}: \textcolor{green!50!black}{\texttt{int}} Maximum sequence length that will be inputted
+                  \item \texttt{device}: \textcolor{green!50!black}{\texttt{torch.device | None = None}} Device to store the buffer on
+              \end{itemize}
+
+        \item \mintinline{python}{def forward(self, x: torch.Tensor, token_positions: torch.Tensor) -> torch.Tensor} \\
+              Process an input tensor of shape \texttt{(..., seq\_len, d\_k)} and return a tensor of the same shape. Note that you should tolerate $x$ with an arbitrary number of batch dimensions. You should assume that the token positions are a tensor of shape \texttt{(..., seq\_len)} specifying the token positions of $x$ along the sequence dimension.
+
+              \vspace{0.5em}
+              You should use the token positions to slice your (possibly precomputed) \texttt{cos} and \texttt{sin} tensors along the sequence dimension.
+
+    \end{itemize}
+
+    \vspace{0.5em}
+    To test your implementation, complete \textcolor{red!80!black}{\texttt{[adapters.run\_rope]}} and make sure it passes \texttt{uv run pytest -k test\_rope}.
+
+\end{problembox}
+
+\subsubsection{Scaled Dot-Product Attention}
+
+\begin{problembox}{softmax}{Implement softmax \hfill (1 point)}
+
+    \textbf{Deliverable:} Write a function to apply the softmax operation on a tensor. Your function should take two parameters: a tensor and a \textit{dimension} $i$, and apply softmax to the $i$-th dimension of the input tensor. The output tensor should have the same shape as the input tensor, but its $i$-th dimension will now have a normalized probability distribution. Use the trick of subtracting the maximum value in the $i$-th dimension from all elements of the $i$-th dimension to avoid numerical stability issues.
+
+    To test your implementation, complete \textcolor{red!80!black}{\texttt{[adapters.run\_softmax]}} and make sure it passes \texttt{uv run pytest -k test\_softmax\_matches\_pytorch}.
+
+\end{problembox}
+
+\boxseparator
+
+\begin{problembox}{scaled\_dot\_product\_attention}{Implement scaled dot-product attention \hfill (5 points)}
+
+    \textbf{Deliverable:} \quad Implement the scaled dot-product attention function. Your implementation should handle keys and queries of shape \texttt{(batch\_size, \dots, seq\_len, d\_k)} and values of shape \texttt{(batch\_size, \dots, seq\_len, d\_v)}, where \dots represents any number of other batch-like dimensions (if provided). The implementation should return an output with the shape \texttt{(batch\_size, \dots, d\_v)}. See section 3.3 for a discussion on batch-like dimensions.
+
+    Your implementation should also support an optional user-provided boolean mask of shape \texttt{(seq\_len, seq\_len)}. The attention probabilities of positions with a mask value of \texttt{True} should collectively sum to 1, and the attention probabilities of positions with a mask value of \texttt{False} should be zero.
+
+    To test your implementation against our provided tests, you will need to implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_scaled\_dot\_product\_attention]}}.
+
+    \texttt{uv run pytest -k test\_scaled\_dot\_product\_attention} tests your implementation on third-order input tensors, while \texttt{uv run pytest -k test\_4d\_scaled\_dot\_product\_attention} tests your implementation on fourth-order input tensors.
+
+\end{problembox}
+
+\subsubsection{Causal Multi-Head Self-Attention}
+
+\begin{problembox}{multihead\_self\_attention}{\newline Implement causal multi-head self-attention (5 points)}
+
+    \textbf{Deliverable:} \quad Implement causal multi-head self-attention as a \texttt{torch.nn.Module}. Your implementation should accept (at least) the following parameters:
+
+    \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \texttt{d\_model}: \textcolor{green!50!black}{\texttt{int}} Dimensionality of the Transformer block inputs.
+        \item \texttt{num\_heads}: \textcolor{green!50!black}{\texttt{int}} Number of heads to use in multi-head self-attention.
+    \end{itemize}
+
+    \vspace{0.5em}
+    Following Vaswani et al. [2017], set $d_k = d_v = d_{\mathrm{model}}/h$. \newline To test your implementation against our provided tests, implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_multihead\_self\_attention]}}. Then, run \texttt{uv run pytest -k test\_multihead\_self\_attention} to test your implementation.
+
+\end{problembox}
+
+\subsection{The Full Transformer LM}
+
+\begin{problembox}{transformer\_block}{Implement the Transformer block (3 points)}
+
+    Implement the pre-norm Transformer block as described in \S 3.5 and illustrated in Figure 2. Your Transformer block should accept (at least) the following parameters.
+
+    \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \texttt{d\_model}: \textcolor{green!50!black}{\texttt{int}} Dimensionality of the Transformer block inputs.
+        \item \texttt{num\_heads}: \textcolor{green!50!black}{\texttt{int}} Number of heads to use in multi-head self-attention.
+        \item \texttt{d\_ff}: \textcolor{green!50!black}{\texttt{int}} Dimensionality of the position-wise feed-forward inner layer.
+    \end{itemize}
+
+    \vspace{0.5em}
+    To test your implementation, implement the adapter \textcolor{red!80!black}{\texttt{[adapters.run\_transformer\_block]}}. Then run \texttt{uv run pytest -k test\_transformer\_block} to test your implementation.
+
+    \textbf{Deliverable:} Transformer block code that passes the provided tests.
+
+\end{problembox}
+
+\boxseparator
+
+\begin{problembox}{transformer\_lm}{Implementing the Transformer LM  (3 points)}
+
+    Time to put it all together! Implement the Transformer language model as described in \S 3.1 and illustrated in Figure 1. At minimum, your implementation should accept all the aforementioned construction parameters for the Transformer block, as well as these additional parameters:
+
+    \begin{itemize}[label={}, leftmargin=1.5em, itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \texttt{vocab\_size}: \textcolor{green!50!black}{\texttt{int}} The size of the vocabulary, necessary for determining the dimensionality of the token embedding matrix.
+        \item \texttt{context\_length}: \textcolor{green!50!black}{\texttt{int}} The maximum context length, necessary for determining the dimensionality of the position embedding matrix.
+        \item \texttt{num\_layers}: \textcolor{green!50!black}{\texttt{int}} The number of Transformer blocks to use.
+    \end{itemize}
+
+    \vspace{0.5em}
+    To test your implementation against our provided tests, you will first need to implement the test adapter at \textcolor{red!80!black}{\texttt{[adapters.run\_transformer\_lm]}}. Then, run \texttt{uv run pytest -k test\_transformer\_lm} to test your implementation.
+
+    \textbf{Deliverable:} A Transformer LM module that passes the above tests.
+
+\end{problembox}
+
+\boxseparator
+
+\vspace{1em}
+\noindent\textbf{Problem (transformer\_accounting): Transformer LM resource accounting \hfill (5 points)}
+
+\noindent\rule{\textwidth}{0.4pt}
+
+\questionitem{\textbf{Subproblem(a)}}
+\begin{questionbox}
+    Consider GPT-2 XL, which has the following configuration:
+
+    \vspace{0.5em}
+    \begin{tabular}{@{}ll}
+        \texttt{vocab\_size}     & 50,257 \\
+        \texttt{context\_length} & 1,024  \\
+        \texttt{num\_layers}     & 48     \\
+        \texttt{d\_model}        & 1,600  \\
+        \texttt{num\_heads}      & 25     \\
+        \texttt{d\_ff}           & 6,400
+    \end{tabular}
+
+    \vspace{0.5em}
+    Suppose we constructed our model using this configuration. How many trainable parameters would our model have? Assuming each parameter is represented using single-precision floating point, how much memory is required to just load this model?
+\end{questionbox}
+
+% ================= 开始 Answerbox =================
+\begin{answerbox}
+    \textbf{Answer:}
+
+    \textbf{A. Token Embeddings}
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \textbf{Calculation:} $\texttt{vocab\_size} \times d_{\mathrm{model}} = 50,257 \times 1,600 = \mathbf{80,411,200}$
+        \item \textbf{Function:} Maps discrete word IDs to continuous numerical vectors; this is the first step in the model's understanding of language.
+    \end{itemize}
+
+    \vspace{1em}
+    \textbf{B. Transformer Blocks (48 layers in total)}
+
+    Each Block contains:
+    \begin{enumerate}
+        \item \textbf{Attention Projections:}
+              \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                  \item Four matrices $W_q, W_k, W_v, W_o$, each of size $d_{\mathrm{model}} \times d_{\mathrm{model}}$.
+                  \item \textbf{Parameters:} $4 \times (1,600 \times 1,600) = 10,240,000$
+              \end{itemize}
+
+        \item \textbf{SwiGLU Feed-Forward Network (FFN):}
+              \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                  \item According to your implementation, it contains $W_1, W_3$ (up-projection) and $W_2$ (down-projection).
+                  \item \textbf{Parameters:} $3 \times (d_{\mathrm{model}} \times d_{\mathrm{ff}}) = 3 \times (1,600 \times 6,400) = 30,720,000$
+              \end{itemize}
+
+        \item \textbf{Layer Normalization (RMSNorm):}
+              \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                  \item \texttt{ln1} and \texttt{ln2} each have a learnable scale parameter of length $d_{\mathrm{model}}$.
+                  \item \textbf{Parameters:} $2 \times 1,600 = 3,200$
+              \end{itemize}
+    \end{enumerate}
+
+    \begin{tabular}{@{}l@{}}
+        \textbf{Subtotal per layer:} $10,240,000 + 30,720,000 + 3,200 = 40,963,200$ \\
+        \textbf{Total for 48 layers:} $48 \times 40,963,200 = \mathbf{1,966,233,600}$
+    \end{tabular}
+
+    \vspace{1em}
+    \textbf{C. Final Output Layer (Final Norm \& LM Head)}
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \textbf{Final RMSNorm:} $1,600$
+        \item \textbf{LM Head:} Maps the hidden state back to the vocabulary, $d_{\mathrm{model}} \times \texttt{vocab\_size} = 1,600 \times 50,257 = 80,411,200$
+        \item \textbf{Function:} Converts the high-dimensional features learned by the model back into a probability distribution over words, used to predict the next word.
+    \end{itemize}
+
+    \begin{tabular}{@{}l@{}}
+        \textbf{Total Parameters:}                                         \\
+        $80,411,200 + 1,966,233,600 + 80,411,200 = \mathbf{2,127,056,000}$ \\
+        \textbf{Memory Cost(FP32):}                                        \\
+        $2,127,057,600 \times 4 \text{ Bytes} \approx \mathbf{8,508,230,400} \text{ Bytes}$
+    \end{tabular}
+
+    \vspace{0.5em}
+\end{answerbox}
+% ================= 结束 Answerbox =================
+
+
+
+\questionitem{\textbf{Subproblem(b)}}
+\begin{questionbox}
+    Identify the matrix multiplies required to complete a forward pass of our GPT-2 XL-shaped model. How many FLOPs do these matrix multiplies require in total? Assume that our input sequence has \texttt{context\_length} tokens.
+\end{questionbox}
+
+\begin{answerbox}
+    \textbf{Answer:}
+
+    \textbf{A. The Foyer (Entrance)}
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \textbf{Token Embedding:} Pure memory lookup to fetch the 1,600-dimensional vector. No arithmetic operations. \textbf{FLOPs: 0}.
+        \item \textbf{Positional Encoding (RoPE):} Multiplies features by $\sin$ and $\cos$. Approx 4 operations per element.
+              \newline \textbf{FLOPs:} $4 \times s \times d = 4 \times 1024 \times 1600 \approx \mathbf{6.55 \text{ MFLOPs}}$.
+    \end{itemize}
+
+    \vspace{1em}
+    \textbf{B. Transformer Blocks (Single Layer)}
+
+    Each Block contains:
+    \begin{enumerate}
+        \item \textbf{Attention Mechanism:}
+              \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                  \item \textbf{RMSNorm 1:} Approx 5 ops per element. \textbf{FLOPs:} $5 \times s \times d \approx 8 \text{ MFLOPs}$.
+                  \item \textbf{Q, K, V Projections ($W_q, W_k, W_v$):} Complexity $\mathcal{O}(sd^2)$. \newline \textbf{FLOPs:} $3 \times 2sd^2 \approx \mathbf{15.73 \text{ GFLOPs}}$.
+                  \item \textbf{Attention Scores \& Value Extraction:} $Q \times K^\top$ and $\text{Score} \times V$. \newline \textbf{FLOPs:} $2s^2d + 2s^2d \approx \mathbf{6.71 \text{ GFLOPs}}$.
+                  \item \textbf{Internal Softmax:} Approx 3 ops per element. \textbf{FLOPs:} $3 \times s^2 \times h \approx 78.64 \text{ MFLOPs}$.
+                  \item \textbf{Output Projection ($W_o$):} \textbf{FLOPs:} $2sd^2 \approx \mathbf{5.24 \text{ GFLOPs}}$.
+                  \item \textbf{Residual Add 1:} \textbf{FLOPs:} $s \times d \approx 1.63 \text{ MFLOPs}$.
+              \end{itemize}
+
+        \item \textbf{SwiGLU Feed-Forward Network (FFN):}
+              \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                  \item \textbf{RMSNorm 2:} \textbf{FLOPs:} $\approx 8 \text{ MFLOPs}$.
+                  \item \textbf{Up/Gate ($W_1, W_3$) \& Down ($W_2$) Projections:} \newline \textbf{FLOPs:} $(2 \times 2sdd_{\mathrm{ff}}) + (2sdd_{\mathrm{ff}}) = 6sdd_{\mathrm{ff}} \approx \mathbf{62.91 \text{ GFLOPs}}$.
+                  \item \textbf{SiLU \& Gating:} Approx 5 ops per element. \textbf{FLOPs:} $5 \times s \times d_{\mathrm{ff}} \approx 32.76 \text{ MFLOPs}$.
+                  \item \textbf{Residual Add 2:} \textbf{FLOPs:} $\approx 1.63 \text{ MFLOPs}$.
+              \end{itemize}
+    \end{enumerate}
+
+    \begin{tabular}{@{}l@{}}
+        \textbf{Single Block Summary:}                                        \\
+        Large Matrix Multiplications: $\approx \mathbf{90.60 \text{ GFLOPs}}$ \\
+        Minor Operations (Norms/Acts/Adds): $\approx \mathbf{137.21 \text{ MFLOPs}}$ (Only $\approx 0.15\%$ of a single layer)
+    \end{tabular}
+
+    \vspace{1em}
+    \textbf{C. Scaling Up (48 Layers)}
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \textbf{Core Matrix Operations:} $48 \times 90.60 \text{ GFLOPs} \approx \mathbf{4,348.65 \text{ GFLOPs}}$.
+        \item \textbf{Minor Operations:} $48 \times 137.21 \text{ MFLOPs} \approx \mathbf{6.58 \text{ GFLOPs}}$.
+    \end{itemize}
+
+    \vspace{1em}
+    \textbf{D. The Exit (Final Output)}
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \textbf{Final RMSNorm:} \textbf{FLOPs:} $\approx 8 \text{ MFLOPs}$.
+        \item \textbf{LM Head Projection:} Maps $1600$D features to vocabulary space. \newline \textbf{FLOPs:} $2 \times s \times d \times V = 2 \times 1024 \times 1600 \times 50,257 \approx \mathbf{164.68 \text{ GFLOPs}}$.
+        \item \textbf{Final Softmax:} Approx 3 ops per element. \\
+              \textbf{FLOPs:} $3 \times 1024 \times 50,257 \approx \mathbf{154.38 \text{ MFLOPs}}$.
+    \end{itemize}
+
+    \begin{tabular}{@{}l@{}}
+        \textbf{Total FLOPs (Forward Pass):} \\
+        $4348.65 + 6.58 + 164.68 + 0.15 \approx \mathbf{4,520 \text{ GFLOPs}} \text{ (approx. } \mathbf{4.52 \text{ TFLOPs}}\text{)}$
+    \end{tabular}
+
+    \vspace{0.5em}
+    \rule{0pt}{1.5em}
+\end{answerbox}
+
+
+
+\questionitem{\textbf{Subproblem(c)}}
+\begin{questionbox}
+    Based on your analysis above, which parts of the model require the most FLOPs?
+\end{questionbox}
+
+\begin{answerbox}
+    \textbf{Answer:}
+
+    Based on the FLOPs analysis, the \textbf{Feed-Forward Network (FFN)} requires the absolute majority of the computation during a standard forward pass, rather than the Attention mechanism.
+
+    \vspace{0.5em}
+    \textbf{Key Insights:}
+    \begin{enumerate}[itemsep=1em, parsep=0pt, topsep=0.5em]
+        \item \textbf{The True Computational Bottleneck is the FFN, not Attention:}\\
+              Due to the massive matrix dimension expansion (typically $d \rightarrow 4d$, or scaling to $d_{\mathrm{ff}}$ in SwiGLU), the computational cost of the FFN is nearly 3 times that of the attention linear projections ($Q, K, V, O$). This is precisely why cutting-edge large language models heavily research \textbf{Mixture of Experts (MoE)} architectures—sparsifying the FFN activations instantly saves a massive amount of compute!
+
+        \item \textbf{The $\mathcal{O}(s^2)$ Complexity is Only Dominant at Long Contexts:}\\
+              At a standard sequence length of $s=1024$, the quadratic attention operations (like $QK^\top$) actually account for a negligible fraction of the total computation. It is only when the sequence length $s$ scales up to tens or hundreds of thousands of tokens that this $\mathcal{O}(s^2)$ bottleneck overtakes the FFN to become the primary computational constraint.
+    \end{enumerate}
+
+    \vspace{0.5em}
+    \rule{0pt}{1.5em}
+\end{answerbox}
+
+
+
+\questionitem{\textbf{Subproblem(d)}}
+\begin{questionbox}
+    Repeat your analysis with GPT-2 small (12 layers, 768 \texttt{d\_model}, 12 heads), GPT-2 medium (24 layers, 1024 \texttt{d\_model}, 16 heads), and GPT-2 large (36 layers, 1280 \texttt{d\_model}, 20 heads). As the model size increases, which parts of the Transformer LM take up proportionally more or less of the total FLOPs?
+
+    \textbf{Deliverable:} For each model, provide a breakdown of model components and its associated FLOPs (as a proportion of the total FLOPs required for a forward pass). In addition, provide a one-to-two sentence description of how varying the model size changes the proportional FLOPs of each component.
+\end{questionbox}
+
+\begin{answerbox}
+    \textbf{Answer:}
+
+    Assuming the standard sequence length $s = 1024$, vocabulary size $V = 50,257$, and $d_{\mathrm{ff}} = 4 \times d_{\mathrm{model}}$, we calculate the core FLOPs (ignoring minor operations like Norms/Residuals which account for $<0.2\%$ of compute).
+
+    \vspace{0.5em}
+    \textbf{1. GPT-2 Small ($L=12, d_{\mathrm{model}}=768$)}
+    \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+        \item \textbf{Total FLOPs:} $\approx 349.6 \text{ GFLOPs}$
+        \item \textbf{Attention (Proj + Scores):} $\approx 96.7 \text{ GFLOPs}$ (\textbf{27.7\%})
+        \item \textbf{FFN (SwiGLU):} $\approx 173.9 \text{ GFLOPs}$ (\textbf{49.7\%})
+        \item \textbf{LM Head:} $\approx 79.0 \text{ GFLOPs}$ (\textbf{22.6\%})
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{2. GPT-2 Medium ($L=24, d_{\mathrm{model}}=1024$)}
+    \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+        \item \textbf{Total FLOPs:} $\approx 1,033.1 \text{ GFLOPs}$
+        \item \textbf{Attention (Proj + Scores):} $\approx 309.2 \text{ GFLOPs}$ (\textbf{29.9\%})
+        \item \textbf{FFN (SwiGLU):} $\approx 618.5 \text{ GFLOPs}$ (\textbf{59.9\%})
+        \item \textbf{LM Head:} $\approx 105.4 \text{ GFLOPs}$ (\textbf{10.2\%})
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{3. GPT-2 Large ($L=36, d_{\mathrm{model}}=1280$)}
+    \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+        \item \textbf{Total FLOPs:} $\approx 2,257.8 \text{ GFLOPs}$
+        \item \textbf{Attention (Proj + Scores):} $\approx 676.5 \text{ GFLOPs}$ (\textbf{30.0\%})
+        \item \textbf{FFN (SwiGLU):} $\approx 1,449.6 \text{ GFLOPs}$ (\textbf{64.2\%})
+        \item \textbf{LM Head:} $\approx 131.7 \text{ GFLOPs}$ (\textbf{5.8\%})
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{Trend Description:} \\
+    As the model size increases, the computational cost is heavily dominated by the internal Transformer blocks (specifically the FFN and Attention projections, which scale quadratically with the hidden dimension, $\mathcal{O}(L \cdot s \cdot d^2)$). Consequently, the LM Head (which scales only linearly with the hidden dimension, $\mathcal{O}(s \cdot d \cdot V)$) takes up a proportionally smaller fraction of the total FLOPs, plummeting from nearly $23\%$ in the Small model to roughly $6\%$ in the Large model.
+
+    \vspace{0.5em}
+    \rule{0pt}{1.5em}
+\end{answerbox}
+
+
+
+\questionitem{\textbf{Subproblem(e)}}
+\begin{questionbox}
+    Take GPT-2 XL and increase the context length to 16,384. How does the total FLOPs for one forward pass change? How do the relative contribution of FLOPs of the model components change?
+\end{questionbox}
+
+\begin{answerbox}
+    \textbf{Answer:}
+
+    Increasing the context length $s$ from $1,024$ to $16,384$ (a $16\times$ increase) causes the total FLOPs to skyrocket from roughly $4.5 \text{ TFLOPs}$ to \textbf{$\approx 149.5 \text{ TFLOPs}$} (an approximate $33\times$ increase).
+
+    The relative contributions of the model components change fundamentally: the quadratic $\mathcal{O}(s^2d)$ attention score computation overtakes the FFN to become the absolute computational bottleneck.
+
+    \vspace{0.5em}
+    \textbf{Detailed Breakdown:}
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \textbf{Linear Scaling Components ($\mathcal{O}(s)$, scaled by $16\times$):}
+              \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                  \item \textbf{FFN:} $\approx 1006.6 \text{ GFLOPs}$ per layer $\times 48 \approx \mathbf{48.3 \text{ TFLOPs}}$ (\textbf{32.3\%})
+                  \item \textbf{Linear Projections ($Q,K,V,O$):} $\approx 335.5 \text{ GFLOPs}$ per layer $\times 48 \approx \mathbf{16.1 \text{ TFLOPs}}$ (\textbf{10.8\%})
+                  \item \textbf{LM Head:} $\approx \mathbf{2.6 \text{ TFLOPs}}$ (\textbf{1.8\%})
+              \end{itemize}
+
+        \item \textbf{Quadratic Scaling Component ($\mathcal{O}(s^2)$, scaled by $256\times$):}
+              \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                  \item \textbf{Attention Scores ($QK^\top$ \& $SV$):} The original $6.71 \text{ GFLOPs}$ per layer explodes to $\approx 1,718 \text{ GFLOPs}$ per layer! \\
+                        Total across 48 layers: $\approx \mathbf{82.5 \text{ TFLOPs}}$ (\textbf{55.1\%})
+              \end{itemize}
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{Conclusion:}
+    At $s=16,384$, the attention mechanism alone accounts for over \textbf{65\%} of the total compute (Projections + Scores), completely dwarfing the FFN. This demonstrates why techniques like FlashAttention, Ring Attention, or Sparse Attention are strictly required for long-context language models.
+
+    \vspace{0.5em}
+    \rule{0pt}{1.5em}
+\end{answerbox}

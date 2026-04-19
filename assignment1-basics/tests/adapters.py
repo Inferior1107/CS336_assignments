@@ -27,7 +27,9 @@ from cs336_basics.Chap_2.rope import RotaryPositionalEmbedding
 from cs336_basics.Chap_2.attention import MultiHeadAttention
 from cs336_basics.Chap_2.transformer import TransformerBlock
 from cs336_basics.Chap_2.language_model import TransformerLM
-
+from cs336_basics.Chap_4.adamw import AdamW
+from cs336_basics.Chap_4.learning_rate import cosine_learning_rate_schedule
+from cs336_basics.Chap_4.clip_gradients import clip_gradients
 
 def run_linear(
     d_in: int,
@@ -745,7 +747,31 @@ def run_cross_entropy(
     Returns:
         Float[Tensor, ""]: The average cross-entropy loss across examples.
     """
-    raise NotImplementedError
+    # 1. 寻找每一行的最大值 (为了数值稳定性)
+    # keepdim=True 使得 max_logits 的形状为 (batch_size, 1)
+    max_logits = torch.max(inputs, dim=1, keepdim=True).values
+    
+    # 2. 所有的 logit 减去最大值 (利用广播机制)
+    # 这一步保证了最大的 exp() 也就是 exp(0)=1，绝对不会溢出
+    shifted_logits = inputs - max_logits
+    
+    # 3. 计算公式的后半部分: log( sum( exp(x) ) )
+    # 沿着 vocab_size 维度 (dim=1) 求和，输出形状为 (batch_size,)
+    log_sum_exp = torch.log(torch.sum(torch.exp(shifted_logits), dim=1))
+    
+    # 4. 提取正确答案对应的 shifted_logits (高级索引大法)
+    # torch.arange 生成 [0, 1, ..., batch_size-1]
+    # 这行代码的意思是：去第 0 行拿 targets[0] 的值，第 1 行拿 targets[1] 的值...
+    # 输出形状为 (batch_size,)
+    batch_size = inputs.shape[0]
+    target_logits = shifted_logits[torch.arange(batch_size), targets]
+    
+    # 5. 计算每个样本的交叉熵损失
+    # 经过数学化简，损失等于: - (o_c - m) + log(sum(exp(o_j - m)))
+    losses = -target_logits + log_sum_exp
+    
+    # 6. 返回整个 batch 的平均值
+    return losses.mean()
 
 
 def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm: float) -> None:
@@ -757,14 +783,14 @@ def run_gradient_clipping(parameters: Iterable[torch.nn.Parameter], max_l2_norm:
 
     The gradients of the parameters (parameter.grad) should be modified in-place.
     """
-    raise NotImplementedError
+    clip_gradients(parameters, max_norm=max_l2_norm)
 
 
 def get_adamw_cls() -> Any:
     """
     Returns a torch.optim.Optimizer that implements AdamW.
     """
-    raise NotImplementedError
+    return AdamW
 
 
 def run_get_lr_cosine_schedule(
@@ -792,7 +818,13 @@ def run_get_lr_cosine_schedule(
     Returns:
         Learning rate at the given iteration under the specified schedule.
     """
-    raise NotImplementedError
+    return cosine_learning_rate_schedule(
+        t=it,
+        alpha_max=max_learning_rate,
+        alpha_min=min_learning_rate,
+        Tw=warmup_iters,
+        Tc=cosine_cycle_iters
+    )
 
 
 def run_save_checkpoint(

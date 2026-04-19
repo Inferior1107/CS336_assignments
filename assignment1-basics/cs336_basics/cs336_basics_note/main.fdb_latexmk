@@ -1,12 +1,12 @@
 # Fdb version 4
-["xdvipdfmx"] 1776568571.29091 "main.xdv" "main.pdf" "main" 1776568571.41893 0
-  "main.xdv" 1776568571.24762 417228 402b32b2994eaba4fbff21fb96fe5795 "xelatex"
+["xdvipdfmx"] 1776589712.17349 "main.xdv" "main.pdf" "main" 1776589712.30021 0
+  "main.xdv" 1776589712.12846 554248 b7aae9900ca5911f7d6eb3b155592679 "xelatex"
   (generated)
   "main.pdf"
   (rewritten before read)
-["xelatex"] 1776568570.29214 "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" "main.xdv" "main" 1776568571.41768 0
+["xelatex"] 1776589711.07721 "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" "main.xdv" "main" 1776589712.29901 0
   "/etc/texmf/web2c/texmf.cnf" 1775129653.52581 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" 1776568569.24058 256 75b893d6ddaa13480cb162db0c1de7a9 ""
+  "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" 1776589658.91842 14578 15dd8d4c4085e79a929199a9239bba78 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmr10.tfm" 1136768653 1296 45809c5a464d5f32c8f98ba97c1bb47f ""
   "/usr/share/texlive/texmf-dist/tex/generic/catchfile/catchfile.sty" 1576016007 8622 63834878edeb14dd71d58d8f22bc3e06 ""
@@ -219,10 +219,10 @@
   "_minted-main/F0BD6975D9FC7A03EE0AAE2C2B0BE4FD377D2AA7CAC59F8F10B4B3E16FE511A1.pygtex" 1775391704.42825 838 dc670ccf116812727e1f887da37c156f ""
   "_minted-main/F96C205E418EB88D26FFA4689D584B05541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.70847 120 ff2ea85d9ee2f5c11135f9dd91a4f1c1 ""
   "_minted-main/default.pygstyle" 1775391167.57776 6428 74aba51736a5bc6590f8f7dd413c6f27 ""
-  "main.aux" 1776568571.24562 6492 2e2b6426d1a93cc5dd15c95277cd0134 "xelatex"
-  "main.tex" 1776568569.24058 256 75b893d6ddaa13480cb162db0c1de7a9 ""
+  "main.aux" 1776589712.12627 7184 4879320ad0091ff595997031f89bb6f3 "xelatex"
+  "main.tex" 1776589658.91842 14578 15dd8d4c4085e79a929199a9239bba78 ""
   "preamble.tex" 1776568402.26913 1954 203f16d3d290f63a08976dfa52d4f505 ""
-  "sections/01_overview.tex" 1775655423.92583 1194 200d084cde5af84355c2c70d59ffd691 ""
+  "sections/01_overview.tex" 1776589710.90119 1650 7d0bc4a4b8d6f846d410a14367833935 ""
   "sections/02_bpe_tokenizer.tex" 1776568402.29913 14714 0185ec22b164126e74c47801d928c914 ""
   "sections/03_transformer_lm.tex" 1776568536.59091 30732 0e5986290423332eb13c99956e561407 ""
   (generated)

@@ -27,6 +27,7 @@
 \newtcolorbox{problembox}[2]{
     enhanced,
     breakable,
+    segmentation at break=false,
     lines before break=3,
     sharp corners,
     boxrule=1.5pt,
@@ -37,7 +38,7 @@
     fonttitle=\bfseries,
     title={Problem (#1): #2},
     titlerule=0pt,
-    overlay={
+    overlay unbroken and first={
             \draw[black, line width=0.4pt] ([xshift=15pt, yshift=3pt]title.south west) -- ([xshift=-15pt, yshift=3pt]title.south east);
         },
     toptitle=6pt,
@@ -51,6 +52,7 @@
 \newtcolorbox{tipbox}[1]{
     enhanced,
     breakable,
+    segmentation at break=false,
     lines before break=3,
     sharp corners,
     boxrule=2pt,               % 边框稍微加粗一点以匹配截图的视觉效果
@@ -61,7 +63,7 @@
     fonttitle=\bfseries,
     title={Low-Resource/Downscaling Tip: #1}, % 固定前缀，#1 接收自定义标题
     titlerule=0pt,
-    overlay={
+    overlay unbroken and first={
             % 调整了 xshift=10pt，使其与下方正文的 left=10pt 和 right=10pt 完美对齐
             \draw[black, line width=0.4pt] ([xshift=10pt, yshift=2pt]title.south west) -- ([xshift=-10pt, yshift=2pt]title.south east);
         },
@@ -76,6 +78,7 @@
 \newtcolorbox{ideabox}[1]{
     enhanced,
     breakable,
+    segmentation at break=false,
     lines before break=3,
     sharp corners,
     boxrule=3pt,
@@ -86,7 +89,7 @@
     fonttitle=\bfseries,
     title={Insights: #1}, % 固定前缀，#1 接收自定义标题
     titlerule=0pt,
-    overlay={
+    overlay unbroken and first={
             % 调整了 xshift=10pt，使其与下方正文的 left=10pt 和 right=10pt 完美对齐
             \draw[black, line width=0.4pt] ([xshift=10pt, yshift=2pt]title.south west) -- ([xshift=-10pt, yshift=2pt]title.south east);
         },
@@ -98,17 +101,38 @@
     bottom=10pt
 }
 
-\newtcolorbox{answerbox}{
-    enhanced,
-    breakable,
-    frame hidden,
-    colback=blue!3,
-    borderline west={2pt}{0pt}{blue!60!black},
-    top=8pt,
-    bottom=8pt,
-    left=12pt,
-    right=10pt,
-    before skip=1em,
-    after skip=1.5em,
-    after upper=\vspace*{0.8em}   % <--- 【终极绝招】星号 \vspace* 强制保留这部分留白，绝不会被列表吃掉！
+\newenvironment{answerbox}
+  {%
+    \par\vspace{1em}%
+    \def\FrameCommand{%
+      {\color{blue!60!black}\vrule width 2pt}%
+      \hspace{10pt}%
+    }%
+    \MakeFramed{\advance\hsize-\width \FrameRestore}%
+    \noindent\ignorespaces
+  }
+  {%
+    \par\vspace{0.8em}%
+    \endMakeFramed
+    \vspace{0.7em}%
+  }
+
+\newenvironment{questionbox}
+  {%
+    \par\vspace{0.8em}%
+    \noindent
+    \begin{tabular}{@{}l@{\hspace{10pt}}l@{}}
+      {\color{orange!90!black}\vrule width 2pt} &
+      \begin{minipage}[t]{\dimexpr\linewidth-18pt\relax}
+      \ignorespaces
+  }
+  {%
+      \end{minipage}
+    \end{tabular}%
+    \vspace{0.5em}%
+  }
+
+\newcommand{\questionitem}[1]{%
+  \par\vspace{1em}%
+  \noindent\makebox[1.8em][l]{#1}%
 }

@@ -133,7 +133,7 @@ if __name__ == "__main__":
     )
     
     end_time = time.time()
-    print(f"\n✅ 训练总耗时: {end_time - start_time:.2f} 秒")
+    print(f"\n[Done] 训练总耗时: {end_time - start_time:.2f} 秒")
     print(f"最终合并列表长度: {len(merges)}")
     print(f"最终词表大小: {len(vocab)}")
     
@@ -152,7 +152,7 @@ if __name__ == "__main__":
     with open(merges_path, "wb") as f:
         pickle.dump(merges, f)
         
-    print(f"💾 序列化完成！文件已保存至: {output_dir}/")
+    print(f"[Saved] 序列化完成！文件已保存至: {output_dir}/")
     
     # ---------------------------------------------------------
     # 分析：寻找最长的 Token (作业要求)
@@ -160,7 +160,7 @@ if __name__ == "__main__":
     longest_token_id = max(vocab, key=lambda k: len(vocab[k]))
     longest_token_bytes = vocab[longest_token_id]
     
-    print("\n🔍 词表分析:")
+    print("\n[Inspect] 词表分析:")
     print(f"最长 Token 的 ID: {longest_token_id}")
     print(f"最长 Token 的字节长度: {len(longest_token_bytes)}")
     try:

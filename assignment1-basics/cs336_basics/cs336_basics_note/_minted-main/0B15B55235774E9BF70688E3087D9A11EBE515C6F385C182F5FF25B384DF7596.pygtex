@@ -134,7 +134,7 @@
     \PYG{p}{)}
     
     \PYG{n}{end\PYGZus{}time} \PYG{o}{=} \PYG{n}{time}\PYG{o}{.}\PYG{n}{time}\PYG{p}{()}
-    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+se}{\PYGZbs{}n}\PYG{l+s+s2}{✅ 训练总耗时: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{end\PYGZus{}time}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{start\PYGZus{}time}\PYG{l+s+si}{:}\PYG{l+s+s2}{.2f}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{ 秒\PYGZdq{}}\PYG{p}{)}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+se}{\PYGZbs{}n}\PYG{l+s+s2}{[Done] 训练总耗时: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{end\PYGZus{}time}\PYG{+w}{ }\PYG{o}{\PYGZhy{}}\PYG{+w}{ }\PYG{n}{start\PYGZus{}time}\PYG{l+s+si}{:}\PYG{l+s+s2}{.2f}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{ 秒\PYGZdq{}}\PYG{p}{)}
     \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}最终合并列表长度: }\PYG{l+s+si}{\PYGZob{}}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{merges}\PYG{p}{)}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
     \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}最终词表大小: }\PYG{l+s+si}{\PYGZob{}}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{vocab}\PYG{p}{)}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
     
@@ -153,7 +153,7 @@
     \PYG{k}{with} \PYG{n+nb}{open}\PYG{p}{(}\PYG{n}{merges\PYGZus{}path}\PYG{p}{,} \PYG{l+s+s2}{\PYGZdq{}wb\PYGZdq{}}\PYG{p}{)} \PYG{k}{as} \PYG{n}{f}\PYG{p}{:}
         \PYG{n}{pickle}\PYG{o}{.}\PYG{n}{dump}\PYG{p}{(}\PYG{n}{merges}\PYG{p}{,} \PYG{n}{f}\PYG{p}{)}
         
-    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}💾 序列化完成！文件已保存至: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{output\PYGZus{}dir}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{/\PYGZdq{}}\PYG{p}{)}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}[Saved] 序列化完成！文件已保存至: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{output\PYGZus{}dir}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{/\PYGZdq{}}\PYG{p}{)}
     
     \PYG{c+c1}{\PYGZsh{} \PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}\PYGZhy{}}
     \PYG{c+c1}{\PYGZsh{} 分析：寻找最长的 Token (作业要求)}
@@ -161,7 +161,7 @@
     \PYG{n}{longest\PYGZus{}token\PYGZus{}id} \PYG{o}{=} \PYG{n+nb}{max}\PYG{p}{(}\PYG{n}{vocab}\PYG{p}{,} \PYG{n}{key}\PYG{o}{=}\PYG{k}{lambda} \PYG{n}{k}\PYG{p}{:} \PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{vocab}\PYG{p}{[}\PYG{n}{k}\PYG{p}{]))}
     \PYG{n}{longest\PYGZus{}token\PYGZus{}bytes} \PYG{o}{=} \PYG{n}{vocab}\PYG{p}{[}\PYG{n}{longest\PYGZus{}token\PYGZus{}id}\PYG{p}{]}
     
-    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+se}{\PYGZbs{}n}\PYG{l+s+s2}{🔍 词表分析:\PYGZdq{}}\PYG{p}{)}
+    \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+s2}{\PYGZdq{}}\PYG{l+s+se}{\PYGZbs{}n}\PYG{l+s+s2}{[Inspect] 词表分析:\PYGZdq{}}\PYG{p}{)}
     \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}最长 Token 的 ID: }\PYG{l+s+si}{\PYGZob{}}\PYG{n}{longest\PYGZus{}token\PYGZus{}id}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
     \PYG{n+nb}{print}\PYG{p}{(}\PYG{l+s+sa}{f}\PYG{l+s+s2}{\PYGZdq{}最长 Token 的字节长度: }\PYG{l+s+si}{\PYGZob{}}\PYG{n+nb}{len}\PYG{p}{(}\PYG{n}{longest\PYGZus{}token\PYGZus{}bytes}\PYG{p}{)}\PYG{l+s+si}{\PYGZcb{}}\PYG{l+s+s2}{\PYGZdq{}}\PYG{p}{)}
     \PYG{k}{try}\PYG{p}{:}

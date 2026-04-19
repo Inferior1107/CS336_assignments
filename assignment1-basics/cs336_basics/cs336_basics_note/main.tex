@@ -189,6 +189,8 @@
 
 \end{problembox}
 
+\problemseparator
+
 \begin{problembox}{scaled\_dot\_product\_attention}{Implement scaled dot-product attention \hfill (5 points)}
 
     \textbf{Deliverable:} \quad Implement the scaled dot-product attention function. Your implementation should handle keys and queries of shape \texttt{(batch\_size, \dots, seq\_len, d\_k)} and values of shape \texttt{(batch\_size, \dots, seq\_len, d\_v)}, where \dots represents any number of other batch-like dimensions (if provided). The implementation should return an output with the shape \texttt{(batch\_size, \dots, d\_v)}. See section 3.3 for a discussion on batch-like dimensions.
@@ -236,6 +238,8 @@
 
 \end{problembox}
 
+\problemseparator
+
 \begin{problembox}{transformer\_lm}{Implementing the Transformer LM  (3 points)}
 
     Time to put it all together! Implement the Transformer language model as described in \S 3.1 and illustrated in Figure 1. At minimum, your implementation should accept all the aforementioned construction parameters for the Transformer block, as well as these additional parameters:
@@ -252,6 +256,8 @@
     \textbf{Deliverable:} A Transformer LM module that passes the above tests.
 
 \end{problembox}
+
+\problemseparator
 
 \vspace{1em}
 \noindent\textbf{Problem (transformer\_accounting): Transformer LM resource accounting \hfill (5 points)}
@@ -407,9 +413,26 @@
 \questionitem{\textbf{Subproblem(c)}}
 \begin{questionbox}
     Based on your analysis above, which parts of the model require the most FLOPs?
-
-    \textbf{Deliverable:} A one-to-two sentence response.
 \end{questionbox}
+
+\begin{answerbox}
+    \textbf{Answer:}
+
+    Based on the FLOPs analysis, the \textbf{Feed-Forward Network (FFN)} requires the absolute majority of the computation during a standard forward pass, rather than the Attention mechanism.
+
+    \vspace{0.5em}
+    \textbf{Key Insights:}
+    \begin{enumerate}[itemsep=1em, parsep=0pt, topsep=0.5em]
+        \item \textbf{The True Computational Bottleneck is the FFN, not Attention:}\\
+              Due to the massive matrix dimension expansion (typically $d \rightarrow 4d$, or scaling to $d_{\mathrm{ff}}$ in SwiGLU), the computational cost of the FFN is nearly 3 times that of the attention linear projections ($Q, K, V, O$). This is precisely why cutting-edge large language models heavily research \textbf{Mixture of Experts (MoE)} architectures—sparsifying the FFN activations instantly saves a massive amount of compute!
+
+        \item \textbf{The $\mathcal{O}(s^2)$ Complexity is Only Dominant at Long Contexts:}\\
+              At a standard sequence length of $s=1024$, the quadratic attention operations (like $QK^\top$) actually account for a negligible fraction of the total computation. It is only when the sequence length $s$ scales up to tens or hundreds of thousands of tokens that this $\mathcal{O}(s^2)$ bottleneck overtakes the FFN to become the primary computational constraint.
+    \end{enumerate}
+
+    \vspace{0.5em}
+    \rule{0pt}{1.5em}
+\end{answerbox}
 
 \questionitem{\textbf{Subproblem(d)}}
 \begin{questionbox}
@@ -418,12 +441,82 @@
     \textbf{Deliverable:} For each model, provide a breakdown of model components and its associated FLOPs (as a proportion of the total FLOPs required for a forward pass). In addition, provide a one-to-two sentence description of how varying the model size changes the proportional FLOPs of each component.
 \end{questionbox}
 
+\begin{answerbox}
+    \textbf{Answer:}
+
+    Assuming the standard sequence length $s = 1024$, vocabulary size $V = 50,257$, and $d_{\mathrm{ff}} = 4 \times d_{\mathrm{model}}$, we calculate the core FLOPs (ignoring minor operations like Norms/Residuals which account for $<0.2\%$ of compute).
+
+    \vspace{0.5em}
+    \textbf{1. GPT-2 Small ($L=12, d_{\mathrm{model}}=768$)}
+    \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+        \item \textbf{Total FLOPs:} $\approx 349.6 \text{ GFLOPs}$
+        \item \textbf{Attention (Proj + Scores):} $\approx 96.7 \text{ GFLOPs}$ (\textbf{27.7\%})
+        \item \textbf{FFN (SwiGLU):} $\approx 173.9 \text{ GFLOPs}$ (\textbf{49.7\%})
+        \item \textbf{LM Head:} $\approx 79.0 \text{ GFLOPs}$ (\textbf{22.6\%})
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{2. GPT-2 Medium ($L=24, d_{\mathrm{model}}=1024$)}
+    \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+        \item \textbf{Total FLOPs:} $\approx 1,033.1 \text{ GFLOPs}$
+        \item \textbf{Attention (Proj + Scores):} $\approx 309.2 \text{ GFLOPs}$ (\textbf{29.9\%})
+        \item \textbf{FFN (SwiGLU):} $\approx 618.5 \text{ GFLOPs}$ (\textbf{59.9\%})
+        \item \textbf{LM Head:} $\approx 105.4 \text{ GFLOPs}$ (\textbf{10.2\%})
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{3. GPT-2 Large ($L=36, d_{\mathrm{model}}=1280$)}
+    \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+        \item \textbf{Total FLOPs:} $\approx 2,257.8 \text{ GFLOPs}$
+        \item \textbf{Attention (Proj + Scores):} $\approx 676.5 \text{ GFLOPs}$ (\textbf{30.0\%})
+        \item \textbf{FFN (SwiGLU):} $\approx 1,449.6 \text{ GFLOPs}$ (\textbf{64.2\%})
+        \item \textbf{LM Head:} $\approx 131.7 \text{ GFLOPs}$ (\textbf{5.8\%})
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{Trend Description:} \\
+    As the model size increases, the computational cost is heavily dominated by the internal Transformer blocks (specifically the FFN and Attention projections, which scale quadratically with the hidden dimension, $\mathcal{O}(L \cdot s \cdot d^2)$). Consequently, the LM Head (which scales only linearly with the hidden dimension, $\mathcal{O}(s \cdot d \cdot V)$) takes up a proportionally smaller fraction of the total FLOPs, plummeting from nearly $23\%$ in the Small model to roughly $6\%$ in the Large model.
+
+    \vspace{0.5em}
+    \rule{0pt}{1.5em}
+\end{answerbox}
+
 \questionitem{\textbf{Subproblem(e)}}
 \begin{questionbox}
     Take GPT-2 XL and increase the context length to 16,384. How does the total FLOPs for one forward pass change? How do the relative contribution of FLOPs of the model components change?
-
-    \textbf{Deliverable:} A one-to-two sentence response.
 \end{questionbox}
+
+\begin{answerbox}
+    \textbf{Answer:}
+
+    Increasing the context length $s$ from $1,024$ to $16,384$ (a $16\times$ increase) causes the total FLOPs to skyrocket from roughly $4.5 \text{ TFLOPs}$ to \textbf{$\approx 149.5 \text{ TFLOPs}$} (an approximate $33\times$ increase).
+
+    The relative contributions of the model components change fundamentally: the quadratic $\mathcal{O}(s^2d)$ attention score computation overtakes the FFN to become the absolute computational bottleneck.
+
+    \vspace{0.5em}
+    \textbf{Detailed Breakdown:}
+    \begin{itemize}[itemsep=0.5em, parsep=0pt, topsep=0.5em]
+        \item \textbf{Linear Scaling Components ($\mathcal{O}(s)$, scaled by $16\times$):}
+              \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                  \item \textbf{FFN:} $\approx 1006.6 \text{ GFLOPs}$ per layer $\times 48 \approx \mathbf{48.3 \text{ TFLOPs}}$ (\textbf{32.3\%})
+                  \item \textbf{Linear Projections ($Q,K,V,O$):} $\approx 335.5 \text{ GFLOPs}$ per layer $\times 48 \approx \mathbf{16.1 \text{ TFLOPs}}$ (\textbf{10.8\%})
+                  \item \textbf{LM Head:} $\approx \mathbf{2.6 \text{ TFLOPs}}$ (\textbf{1.8\%})
+              \end{itemize}
+
+        \item \textbf{Quadratic Scaling Component ($\mathcal{O}(s^2)$, scaled by $256\times$):}
+              \begin{itemize}[itemsep=0.2em, parsep=0pt, topsep=0.2em]
+                  \item \textbf{Attention Scores ($QK^\top$ \& $SV$):} The original $6.71 \text{ GFLOPs}$ per layer explodes to $\approx 1,718 \text{ GFLOPs}$ per layer! \\
+                        Total across 48 layers: $\approx \mathbf{82.5 \text{ TFLOPs}}$ (\textbf{55.1\%})
+              \end{itemize}
+    \end{itemize}
+
+    \vspace{0.5em}
+    \textbf{Conclusion:}
+    At $s=16,384$, the attention mechanism alone accounts for over \textbf{65\%} of the total compute (Projections + Scores), completely dwarfing the FFN. This demonstrates why techniques like FlashAttention, Ring Attention, or Sparse Attention are strictly required for long-context language models.
+
+    \vspace{0.5em}
+    \rule{0pt}{1.5em}
+\end{answerbox}
 
 \newpage
 

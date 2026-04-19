@@ -1,16 +1,16 @@
 # Fdb version 4
-["xdvipdfmx"] 1776566638.82077 "main.xdv" "main.pdf" "main" 1776566638.96583 0
-  "main.xdv" 1776566638.77551 1022712 aca86b474eb12fdcff688b1165ada6ad "xelatex"
+["xdvipdfmx"] 1776568189.28235 "main.xdv" "main.pdf" "main" 1776568189.43384 0
+  "main.xdv" 1776568189.23662 1064208 9371dea390a35f6c32224ca13e5e1e81 "xelatex"
   (generated)
   "main.pdf"
   (rewritten before read)
-["xelatex"] 1776566637.36414 "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" "main.xdv" "main" 1776566638.9646 0
+["xelatex"] 1776568187.79204 "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" "main.xdv" "main" 1776568189.43257 0
   "../../fast_bpe/src/lib.rs" 1775635312.97219 4396 29f244b2b11183732cbd3fb99cbb5ef2 ""
   "../../tests/adapters.py" 1776495203.41581 35207 60dc6d466ec45558fcb38d47c9fb323a ""
   "../test_function/bpe_trainer.py" 1776563675.82373 6831 0b15b55235774e9bf70688e3087d9a11 ""
   "../test_function/tokenizer.py" 1775635534.09134 5988 0a6899ebb7fd2f22e0ae59e053a50927 ""
   "/etc/texmf/web2c/texmf.cnf" 1775129653.52581 475 c0e671620eb5563b2130f56340a5fde8 ""
-  "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" 1776566637.29742 25081 fcd1875fffb6810bc971fff535b06a76 ""
+  "/home/inferior/Projects/CS336/assignment1-basics/cs336_basics/cs336_basics_note/main.tex" 1776568095.82624 30952 9209681d2db0a22b8437ae265bc6fa81 ""
   "/usr/share/texlive/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/share/texlive/texmf-dist/fonts/tfm/public/cm/cmr10.tfm" 1136768653 1296 45809c5a464d5f32c8f98ba97c1bb47f ""
   "/usr/share/texlive/texmf-dist/tex/generic/catchfile/catchfile.sty" 1576016007 8622 63834878edeb14dd71d58d8f22bc3e06 ""
@@ -231,11 +231,11 @@
   "_minted-main/F0BD6975D9FC7A03EE0AAE2C2B0BE4FD377D2AA7CAC59F8F10B4B3E16FE511A1.pygtex" 1775391704.42825 838 dc670ccf116812727e1f887da37c156f ""
   "_minted-main/F96C205E418EB88D26FFA4689D584B05541C68F80C6A6F06151AFD63BAE50EBC.pygtex" 1775391167.70847 120 ff2ea85d9ee2f5c11135f9dd91a4f1c1 ""
   "_minted-main/default.pygstyle" 1775391167.57776 6428 74aba51736a5bc6590f8f7dd413c6f27 ""
-  "main.aux" 1776566638.77251 7345 4c7d334f2ea9ba835071a47fcd7c5156 "xelatex"
-  "main.tex" 1776566637.29742 25081 fcd1875fffb6810bc971fff535b06a76 ""
-  "preamble.tex" 1776566092.03097 3395 41c754d41b3f01ca362fc9536a590482 ""
+  "main.aux" 1776568189.23462 7342 4eefb13ca775d57af1cb973b57015dc4 "xelatex"
+  "main.tex" 1776568095.82624 30952 9209681d2db0a22b8437ae265bc6fa81 ""
+  "preamble.tex" 1776567147.37856 1922 ffb83a2c45cebf7ad87cd8f0c89ba48e ""
   "sections/01_overview.tex" 1775655423.92583 1194 200d084cde5af84355c2c70d59ffd691 ""
-  "sections/02_bpe_tokenizer.tex" 1775655542.8673 14680 1cb27cc51ecb9ac29a588e2028654a41 ""
+  "sections/02_bpe_tokenizer.tex" 1776568186.11156 14673 73fbb6548c2d8df1ed6ce88b8af29337 ""
   "sections/99_appendix.tex" 1775655591.94178 1263 ed066bdaf5d939ef9a5fec2141ed098b ""
   (generated)
   "main.aux"

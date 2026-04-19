@@ -33,7 +33,6 @@ this is a teststring
 
 \end{problembox}
 
-\newpage
 \subsection{Unicode Encodings}
 
 \begin{itemize}[itemsep=0pt, parsep=0pt, topsep=0pt]
@@ -73,7 +72,7 @@ def decode_utf8_bytes_to_str_wrong(bytestring: bytes):
     \end{enumerate}
 
 \end{problembox}
-\newpage
+
 \subsection{Subword Tokenization}
 
 Sennrich et al. [2016] propose to use byte-pair encoding (BPE; Gage, 1994), a compression algorithm that iteratively replaces (``merges'') the most frequent pair of bytes with a single, new unused index.
@@ -100,8 +99,6 @@ Use regular expressions to split the sentence into independent punctuation marks
 \end{itemize}
 
 \paragraph{Special tokens}
-
-\newpage
 
 \subsection{Experimenting with BPE Tokenizer Training}
 
@@ -168,6 +165,8 @@ Use regular expressions to split the sentence into independent punctuation marks
     \end{enumerate}
 
 \end{problembox}
+
+\problemseparator
 
 \begin{problembox}{train\_bpe\_expts\_owt}{BPE Training on OpenWebText (2 points)}
 

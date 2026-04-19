@@ -481,6 +481,9 @@ INPUT _minted-main/A6FE6A50042292D0180276BA35CC1336541C68F80C6A6F06151AFD63BAE50
 INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmbx10.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmbx7.tfm
 INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmbx5.tfm
+INPUT ./sections/04_training.tex
+INPUT ./sections/04_training.tex
+INPUT sections/04_training.tex
 INPUT /usr/share/texmf/fonts/tfm/public/lm/rm-lmbx7.tfm
 INPUT main.aux
 INPUT ./main.pyg
